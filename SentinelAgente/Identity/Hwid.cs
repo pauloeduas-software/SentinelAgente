@@ -23,21 +23,26 @@ public static partial class Hwid
     public const string DmiDirectory = "/sys/class/dmi/id";
 
     /// <summary>
-    /// Os seriais que a fábrica deixou em branco. A mesma lista do SentinelWeb
+    /// Os seriais que a fábrica deixou em branco, comparados sem separadores. A
+    /// mesma lista do SentinelWeb
     /// (<c>server/modules/reconciliation/helpers/normalize-identity.helper.ts</c>,
-    /// a decisão D46 de lá): mudou lá, muda aqui.
+    /// as decisões D46 e CT de lá): mudou lá, muda aqui.
     /// </summary>
-    private static readonly HashSet<string> FactorySerials =
-    [
+    private static readonly HashSet<string> FactorySerials = new[]
+    {
         "to be filled by o.e.m.", "to be filled by oem", "system serial number", "default string",
         "chassis serial number", "not applicable", "not specified", "none", "n/a", "na", "null",
         "unknown", "invalid", "o.e.m.", "oem", "0123456789", "123456789", "00000000",
-    ];
+        "default", "base board serial number", "baseboard serial number", "not available", "not present",
+        "1234567890", "1234567",
+    }.Select(Compact).ToHashSet();
 
     /// <summary>
-    /// UUIDs que não identificam nada: os três do SentinelWeb e os dois que o
-    /// osquery acrescenta (<c>kPlaceholderHardwareUUIDList</c>, em
-    /// <c>osquery/core/system.cpp</c>).
+    /// UUIDs que não identificam nada, a lista do SentinelWeb (D46 e CT): zeros,
+    /// só <c>f</c>, o da AMI, os dois que o osquery acrescenta
+    /// (<c>kPlaceholderHardwareUUIDList</c>, em <c>osquery/core/system.cpp</c>) e
+    /// os dois de fábrica na ordem de bytes que o kernel usa no SMBIOS anterior
+    /// ao 2.6 (<c>dmi_save_uuid</c>, em <c>drivers/firmware/dmi_scan.c</c>).
     /// </summary>
     private static readonly HashSet<string> UselessUuids =
     [
@@ -46,6 +51,8 @@ public static partial class Hwid
         "03000200-0400-0500-0006-000700080009",
         "03020100-0504-0706-0809-0a0b0c0d0e0f",
         "10000000-0000-8000-0040-000000000000",
+        "00020003-0004-0005-0006-000700080009",
+        "00010203-0405-0607-0809-0a0b0c0d0e0f",
     ];
 
     /// <summary>
@@ -81,15 +88,24 @@ public static partial class Hwid
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(normalized)));
     }
 
-    /// <summary>Serial de verdade: fora da lista, com 4 caracteres ou mais e sem ser um caractere repetido.</summary>
+    /// <summary>
+    /// Serial de verdade: sem os separadores (a forma que vai para o hash), fora
+    /// da lista, com 4 caracteres ou mais e sem ser um caractere repetido. Com os
+    /// separadores, <c>0000-0000</c> passaria e daria o mesmo HWID a toda máquina
+    /// com ele.
+    /// </summary>
     internal static bool IsRealSerial(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        var lower = value.Trim().ToLowerInvariant();
-        return !FactorySerials.Contains(lower) && lower.Length >= 4 && !RepeatedCharacter().IsMatch(lower);
+        var compact = Compact(value);
+        return !FactorySerials.Contains(compact) && compact.Length >= 4 && !RepeatedCharacter().IsMatch(compact);
     }
+
+    /// <summary>Minúsculas, sem <c>-</c>, <c>:</c> e espaço: o mesmo <c>compactar</c> do SentinelWeb.</summary>
+    private static string Compact(string value) =>
+        new(value.ToLowerInvariant().Where(c => c is not ('-' or ':') && !char.IsWhiteSpace(c)).ToArray());
 
     /// <summary>UUID de verdade: no formato de UUID e fora da lista.</summary>
     internal static bool IsRealUuid(string? value)
@@ -119,7 +135,13 @@ public static partial class Hwid
         }
         catch (UnauthorizedAccessException)
         {
-            throw new HwidException($"Sem permissão para ler \"{path}\": o agente precisa rodar como root (sudo).");
+            throw new HwidException(
+                $"Sem permissão para ler \"{path}\": o agente precisa rodar como root (sudo), " +
+                "e o SELinux ou o AppArmor não pode bloquear a leitura.");
+        }
+        catch (IOException e)
+        {
+            throw new HwidException($"Falha ao ler \"{path}\": {e.Message}");
         }
     }
 

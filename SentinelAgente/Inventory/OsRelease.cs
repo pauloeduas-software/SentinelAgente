@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace SentinelAgente.Inventory;
 
 /// <summary>
@@ -5,18 +7,19 @@ namespace SentinelAgente.Inventory;
 /// o <c>PRETTY_NAME</c>: ele leva a versão pontual ("24.04.1 LTS"), e cada
 /// atualização viraria uma mudança de hardware no SentinelWeb (A14).
 /// </summary>
-internal static class OsRelease
+internal static partial class OsRelease
 {
     public static string Read(SystemRoot root)
     {
         var fields = Parse(root.ReadText("etc/os-release") ?? root.ReadText("usr/lib/os-release"));
-        var name = fields.GetValueOrDefault("NAME");
-        var version = fields.GetValueOrDefault("VERSION_ID");
-
         // Sem NAME, o padrão do os-release é "Linux". Nunca nulo: o servidor
         // gravaria "desconhecido" e contaria uma mudança.
-        if (name is null) return fields.GetValueOrDefault("PRETTY_NAME") ?? "Linux";
-        return version is null ? name : $"{name} {version}";
+        var name = fields.GetValueOrDefault("NAME") ?? "Linux";
+        var version = fields.GetValueOrDefault("VERSION_ID");
+
+        // A distribuição contínua põe a data do snapshot na versão (o openSUSE
+        // Tumbleweed: "20241115"), e cada atualização seria uma mudança.
+        return version is null || SnapshotDate().IsMatch(version) ? name : $"{name} {version}";
     }
 
     /// <summary>As linhas <c>CHAVE=valor</c>, sem as aspas; comentário e valor vazio ficam de fora.</summary>
@@ -34,4 +37,7 @@ internal static class OsRelease
         }
         return fields;
     }
+
+    [GeneratedRegex("^[0-9]{8}$")]
+    private static partial Regex SnapshotDate();
 }

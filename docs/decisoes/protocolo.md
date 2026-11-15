@@ -6,7 +6,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A4, A9, A10, A11, A12, A13 e A14.
+> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14 e A15.
 
 ---
 
@@ -305,3 +305,41 @@ máquina mudar é mudança falsa, então cada campo vai na forma que só muda qu
 - **Sem rota padrão, o MAC e o IP não vão**, e o servidor apaga os que tinha.
 - **`DiskTotalBytes` volta** quando o SentinelWeb mostrar o campo, e **`ChassisType`** quando o servidor fixar o
   formato.
+
+---
+
+## A15 — A revisão da identidade e do inventário: o lixo sem separadores, a Lenovo sempre, o túnel pelo tipo
+
+**Decidido** (2026-11-15, numa revisão do `Identity/` e do `Inventory/` contra o GLPI Agent, o osquery, o Fleet, o
+systemd e o kernel):
+
+- **O serial de fábrica se reconhece sem `-`, `:` e espaço**, a forma que vai para o hash. A lista, o corte de 4
+  caracteres e o caractere repetido olham o valor compactado, e a lista ganha os sete do Fleet e do GLPI Agent. É a
+  [CT](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#ct--o-lixo-de-fábrica-se-reconhece-sem-separadores-e-a-lista-cresce)
+  do SentinelWeb, feita lá primeiro.
+- **A lista de UUIDs ganha os dois de fábrica da AMI na outra ordem de bytes:** no SMBIOS anterior ao 2.6, o kernel
+  imprime o `product_uuid` com os primeiros campos invertidos (`dmi_save_uuid`, em `drivers/firmware/dmi_scan.c`).
+- **Na Lenovo, o modelo é sempre o `product_version`** quando ele não é de fábrica, como no osquery
+  (`system_info.cpp`) e no systemd (`ID_SYSFS_ATTRIBUTE_MODEL=product_version`). O filtro do GLPI Agent por "Think",
+  "Idea"… deixava o "Lenovo V14 G2 ITL" ir como "82KB".
+- **"Super Server" e "System Name"** entram nos nomes de fábrica, como o systemd os marca
+  (`ID_PRODUCT_NAME_IS_RUBBISH`).
+- **O sistema sem `NAME` é "Linux"** mais o `VERSION_ID`, o padrão do os-release, e não o `PRETTY_NAME`. O
+  `VERSION_ID` que é data de snapshot (8 dígitos, o openSUSE Tumbleweed) não vai.
+- **O túnel da VPN se reconhece pelo `/sys/class/net/<placa>/type`**, e não pela falta de `device/`: o que não é
+  Ethernet (`tun`, `wg` e `ppp`) fica para trás, e bond, bridge e VLAN contam pela métrica.
+
+**Supera em parte:** [A13](#a13--o-hwid-é-uma-fila-de-três-dados-do-firmware) (as listas e a comparação dos seriais
+de fábrica) e [A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera) (a troca da
+Lenovo, o sistema sem `NAME` e "física antes de virtual").
+
+**Por quê:** com a lista olhando o valor com separadores, `0000-0000` passava, e toda máquina com ele ganhava o mesmo
+HWID: a segunda a se cadastrar tomava o lugar da primeira. Nenhuma máquina tem ainda token deste agente, e a A13 já
+dizia que é a hora de fechar a conta: depois, mudar a lista muda o HWID de máquina cadastrada. Já "física antes de
+virtual" mandava o Wi-Fi de gerência no lugar do `bond0` do servidor: bond e bridge não têm `device/`, mas é por
+eles que a máquina sai.
+
+**O que fica de fora, declarado:**
+- **A VM com balão de memória** (`virtio_balloon`, a memória dinâmica do Hyper-V) muda o `MemTotal` com o balão, e o
+  arredondamento não segura: cada GiB a mais ou a menos vira uma mudança no SentinelWeb.
+- **O Wi-Fi com MAC aleatório** manda um MAC por conexão. O MAC não entra na comparação nem no vínculo, só na tela.

@@ -69,6 +69,24 @@ public sealed class MachineInventoryTests : IDisposable
     }
 
     [Fact]
+    public void O_bond_de_menor_metrica_ganha_do_wifi()
+    {
+        Write("sys/class/dmi/id/product_serial", "B4C04F4B");
+        Write("proc/net/route",
+            "Iface\tDestination\tGateway \tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n" +
+            "wlp2s0\t00000000\t0101A8C0\t0003\t0\t0\t600\t00000000\t0\t0\t0\n" +
+            "bond0\t00000000\t0101A8C0\t0003\t0\t0\t100\t00000000\t0\t0\t0\n");
+        // O bond não tem device/, mas é Ethernet: a placa por onde o servidor sai.
+        Write("sys/class/net/bond0/type", "1");
+        Write("sys/class/net/bond0/address", "00:25:90:00:00:01");
+        Write("sys/class/net/wlp2s0/type", "1");
+        Write("sys/class/net/wlp2s0/device/uevent", "");
+        Write("sys/class/net/wlp2s0/address", "3c:a9:f4:5e:61:08");
+
+        Assert.Equal("00:25:90:00:00:01", Read(_directory).MacAddress);
+    }
+
+    [Fact]
     public void A_vpn_fica_atras_da_placa_fisica()
     {
         var payload = Read(Machine("pc-montado"));
@@ -97,6 +115,51 @@ public sealed class MachineInventoryTests : IDisposable
 
         Assert.Equal("LENOVO", payload.Manufacturer);
         Assert.Equal("ThinkPad X1 Carbon 5th", payload.HardwareModel);
+    }
+
+    [Theory]
+    [InlineData("Lenovo V14 G2 ITL")]
+    [InlineData("ThinkPad X1 Carbon 5th")]
+    public void Na_lenovo_o_modelo_e_sempre_o_product_version(string version)
+    {
+        Write("sys/class/dmi/id/product_serial", "PF0XYZ12");
+        Write("sys/class/dmi/id/sys_vendor", "LENOVO");
+        Write("sys/class/dmi/id/product_name", "82KB");
+        Write("sys/class/dmi/id/product_version", version);
+
+        Assert.Equal(version, Read(_directory).HardwareModel);
+    }
+
+    [Fact]
+    public void Na_lenovo_sem_product_version_fica_o_codigo()
+    {
+        Write("sys/class/dmi/id/product_serial", "PF0XYZ12");
+        Write("sys/class/dmi/id/sys_vendor", "LENOVO");
+        Write("sys/class/dmi/id/product_name", "82KB");
+        Write("sys/class/dmi/id/product_version", "None");
+
+        Assert.Equal("82KB", Read(_directory).HardwareModel);
+    }
+
+    [Fact]
+    public void O_modelo_lixo_da_supermicro_vai_nulo()
+    {
+        Write("sys/class/dmi/id/product_serial", "B4C04F4B");
+        Write("sys/class/dmi/id/sys_vendor", "Supermicro");
+        Write("sys/class/dmi/id/product_name", "Super Server");
+
+        Assert.Null(Read(_directory).HardwareModel);
+    }
+
+    [Theory]
+    [InlineData("NAME=\"openSUSE Tumbleweed\"\nVERSION_ID=\"20241115\"\nPRETTY_NAME=\"openSUSE Tumbleweed\"\n", "openSUSE Tumbleweed")]
+    [InlineData("VERSION_ID=1.0\nPRETTY_NAME=\"Distro 1.0.3\"\n", "Linux 1.0")]
+    public void O_sistema_nao_muda_com_snapshot_nem_volta_ao_pretty_name(string osRelease, string expected)
+    {
+        Write("sys/class/dmi/id/product_serial", "B4C04F4B");
+        Write("etc/os-release", osRelease);
+
+        Assert.Equal(expected, Read(_directory).OsVersion);
     }
 
     [Fact]

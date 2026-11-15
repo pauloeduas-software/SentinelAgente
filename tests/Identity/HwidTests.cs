@@ -26,6 +26,31 @@ public sealed class HwidTests : IDisposable
         Assert.Equal(Hwid.Hash("6f1a2b3c-4d5e-4f60-8a71-92b3c4d5e6f7"), Hwid.Read(Dmi("vm-virtualbox")));
     }
 
+    [Theory]
+    [InlineData("0000-0000")]
+    [InlineData("00 00 00 00")]
+    [InlineData("SystemSerialNumber")]
+    [InlineData("Base Board Serial Number")]
+    [InlineData("A-B-C")]
+    public void O_serial_de_fabrica_se_reconhece_sem_os_separadores(string serial)
+    {
+        Assert.False(Hwid.IsRealSerial(serial));
+    }
+
+    [Theory]
+    [InlineData("00020003-0004-0005-0006-000700080009")]
+    [InlineData("00010203-0405-0607-0809-0a0b0c0d0e0f")]
+    public void O_uuid_de_fabrica_da_ami_na_outra_ordem_de_bytes_nao_serve(string uuid)
+    {
+        Assert.False(Hwid.IsRealUuid(uuid));
+    }
+
+    [Fact]
+    public void O_serial_da_placa_com_barras_da_dell_serve()
+    {
+        Assert.True(Hwid.IsRealSerial("/B4C04F4B/CNCMK0004L0123/"));
+    }
+
     [Fact]
     public void Nao_inventa_identidade_quando_nada_serve()
     {

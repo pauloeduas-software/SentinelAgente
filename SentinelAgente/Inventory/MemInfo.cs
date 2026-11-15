@@ -5,6 +5,11 @@ namespace SentinelAgente.Inventory;
 /// em GiB, em bytes. O <c>MemTotal</c> cru varia alguns kB com o kernel, e cada
 /// variação viraria uma mudança de hardware (A14).
 /// </summary>
+/// <remarks>
+/// Na VM com balão de memória (o <c>virtio_balloon</c> do Proxmox, a memória
+/// dinâmica do Hyper-V), o <c>MemTotal</c> sobe e desce com o balão, e o
+/// arredondamento não segura: cada GiB a mais ou a menos vira uma mudança.
+/// </remarks>
 internal static class MemInfo
 {
     private const long GiB = 1024L * 1024 * 1024;

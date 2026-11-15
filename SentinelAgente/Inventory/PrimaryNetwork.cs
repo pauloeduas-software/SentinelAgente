@@ -11,22 +11,27 @@ internal sealed record NetworkData(string? MacAddress, string? LocalIp);
 
 /// <summary>
 /// O MAC e o IP da placa por onde a máquina sai para a rede: a da rota padrão
-/// de menor métrica, como o Fleet escolhe (<c>networkInterfaceQuery</c>), e
-/// física antes de virtual, como o GLPI Agent separa (<c>Linux/Networks.pm</c>).
+/// de menor métrica, como o Fleet escolhe (<c>networkInterfaceQuery</c>), com o
+/// túnel de VPN para trás.
 /// </summary>
 /// <remarks>
-/// A placa física é a que tem <c>/sys/class/net/&lt;placa&gt;/device</c>. A VPN
-/// (<c>tun0</c>, <c>wg0</c>) que vira rota padrão fica para trás; a bridge do
-/// servidor de VMs (<c>br0</c>) serve quando é a única rota.
+/// O túnel é o que não é Ethernet no <c>/sys/class/net/&lt;placa&gt;/type</c>:
+/// <c>tun0</c> e <c>wg0</c> são 65534, <c>ppp0</c> é 512. A VPN de túnel
+/// completo vira a rota de menor métrica, e não é por ela que a máquina está na
+/// rede. Bond, bridge e VLAN são Ethernet (tipo 1) e contam pela métrica: no
+/// servidor, a rota padrão costuma estar no <c>bond0</c> ou no <c>br0</c>.
 /// </remarks>
 internal static class PrimaryNetwork
 {
     private const uint RouteUp = 0x1;
 
+    // ARPHRD_ETHER, em include/uapi/linux/if_arp.h: o Wi-Fi também é.
+    private const string Ethernet = "1";
+
     public static NetworkData Read(SystemRoot root, Func<string, IReadOnlyList<InterfaceAddress>> addressesOf)
     {
         var route = DefaultRoutes(root)
-            .OrderByDescending(r => root.HasDirectory($"sys/class/net/{r.Interface}/device"))
+            .OrderByDescending(r => root.ReadValue($"sys/class/net/{r.Interface}/type") == Ethernet)
             .ThenBy(r => r.Metric)
             .FirstOrDefault();
         if (route is null) return new NetworkData(null, null);
