@@ -132,6 +132,13 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
   | `Network` | `Telemetry/Network/NetworkUsage.cs` | a soma das placas com `device/` no `/proc/net/dev`, e a velocidade média desde a amostra anterior |
   | `TopProcesses` | `Telemetry/Processes/TopProcesses.cs` | os 10 de maior `VmRSS`, um por PID, com o nome do `comm` |
 
+- **Máquina física ou VM.** A VM tem placa com `device/` (virtio, netvsc). No contêiner (LXC, Docker), a placa
+  é uma veth e a rede vai zerada — e o agente nem é para ele: o firmware que ele leria é o do hospedeiro (A13).
+- **No ZFS, cada dataset é um disco** com o espaço livre do pool inteiro, como o Telegraf e o `df` mostram:
+  somar os totais conta o pool mais de uma vez. O servidor não soma.
+- **O envio que não chegou não para nada:** a conexão que cai no meio do envio devolve `false` ao
+  `IServerLink.TrySendAsync`, e a amostra é descartada como sem conexão.
+
 - **GPU o servidor não recebe hoje.** Não há campo no protocolo, coluna no banco nem lugar na tela: começa
   no SentinelWeb.
 

@@ -122,6 +122,28 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Envio_preso_quando_a_conexao_cai_devolve_false()
+    {
+        _hub = await StartHubAsync();
+        _hub.StopReadingAfterHandshake = true;
+        var connection = await StartAsync(_hub.Url);
+        var server = await ReadAsync(_hub.Accepted);
+        await ReadAsync(_hub.Received);
+        Assert.True(await EventuallyAsync(() => connection.IsConnected));
+
+        // O hub não lê mais: 64 MB enchem o buffer, e o envio fica preso no meio.
+        var stuck = connection.TrySendAsync(
+            new OutgoingMessage(Messages.Telemetry, new byte[64 * 1024 * 1024]), TestContext.Current.CancellationToken);
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+        Assert.False(stuck.IsCompleted);
+
+        // A conexão cai com o envio preso: a sessão acaba e cancela o envio.
+        await server.CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, "Servidor encerrando", TestContext.Current.CancellationToken);
+
+        Assert.False(await stuck.WaitAsync(Wait, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task Reconecta_e_apresenta_de_novo_quando_o_servidor_fecha()
     {
         _hub = await StartHubAsync();

@@ -41,9 +41,11 @@ public sealed partial class AgentConnection(
             await session.SendAsync(message, cancellationToken);
             return true;
         }
-        catch (Exception e) when (e is WebSocketException or ObjectDisposedException or InvalidOperationException)
+        catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
-            // A conexão caiu no meio do envio; o laço de recepção vai perceber e reconectar.
+            // A conexão caiu no meio do envio: o fim da sessão cancela o envio
+            // preso, e o socket pode dar qualquer erro. Para quem chamou é tudo
+            // "não chegou"; o laço de recepção vai perceber e reconectar.
             return false;
         }
     }

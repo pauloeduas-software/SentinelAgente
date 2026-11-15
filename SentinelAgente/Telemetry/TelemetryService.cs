@@ -39,14 +39,30 @@ internal sealed partial class TelemetryService(
             using var timer = new PeriodicTimer(timings.Interval);
             do
             {
-                var message = Messages.CreateTelemetry(Collect().ToPayload(id));
-                if (!await link.TrySendAsync(message, stoppingToken)) LogDiscarded();
+                await SendSampleAsync(id, stoppingToken);
             }
             while (await timer.WaitForNextTickAsync(stoppingToken));
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             // O serviço está parando.
+        }
+    }
+
+    /// <summary>
+    /// Uma volta: o erro que escapar dela vai para o log e não para o serviço,
+    /// como a saída do Telegraf que falha. Uma hora ruim não para as seguintes.
+    /// </summary>
+    private async Task SendSampleAsync(string hwid, CancellationToken stoppingToken)
+    {
+        try
+        {
+            var message = Messages.CreateTelemetry(Collect().ToPayload(hwid));
+            if (!await link.TrySendAsync(message, stoppingToken)) LogDiscarded();
+        }
+        catch (Exception e) when (e is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
+        {
+            LogSampleFailed(e);
         }
     }
 
@@ -69,6 +85,9 @@ internal sealed partial class TelemetryService(
 
     [LoggerMessage(LogLevel.Information, "Amostra de telemetria descartada: sem conexão com o servidor.")]
     private partial void LogDiscarded();
+
+    [LoggerMessage(LogLevel.Error, "A amostra de telemetria falhou; a próxima vai na hora seguinte.")]
+    private partial void LogSampleFailed(Exception exception);
 
     [LoggerMessage(LogLevel.Warning, "O coletor {Collector} falhou; a parte dele vai zerada nesta amostra.")]
     private partial void LogCollectorFailed(Exception exception, string collector);

@@ -25,6 +25,7 @@ internal sealed class FakeAgentHub : IAsyncDisposable
     public const string EnrollSecret = "segredo-de-instalacao";
 
     private readonly WebApplication _app;
+    private readonly CancellationTokenSource _stopping = new();
     private int _refused;
 
     private FakeAgentHub(WebApplication app) => _app = app;
@@ -48,6 +49,12 @@ internal sealed class FakeAgentHub : IAsyncDisposable
 
     /// <summary>Como o agente fechou cada conexão.</summary>
     public Channel<WebSocketCloseStatus?> Closed { get; } = Channel.CreateUnbounded<WebSocketCloseStatus?>();
+
+    /// <summary>
+    /// Quando ligado, o hub para de ler depois da primeira mensagem: o envio
+    /// seguinte do agente enche o buffer e fica preso, como numa rede que travou.
+    /// </summary>
+    public bool StopReadingAfterHandshake { get; set; }
 
     /// <summary>Quantas conexões levaram 401.</summary>
     public int Refused => Volatile.Read(ref _refused);
@@ -130,6 +137,13 @@ internal sealed class FakeAgentHub : IAsyncDisposable
                 }
 
                 Received.Writer.TryWrite(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                if (StopReadingAfterHandshake)
+                {
+                    // Até a conexão cair ou o hub parar: o Kestrel espera o handler terminar.
+                    using var stop = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, _stopping.Token);
+                    await Task.Delay(Timeout.Infinite, stop.Token).ContinueWith(_ => { });
+                    return;
+                }
             }
         }
         catch (WebSocketException)
@@ -140,6 +154,7 @@ internal sealed class FakeAgentHub : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        await _stopping.CancelAsync();
         await _app.StopAsync();
         await _app.DisposeAsync();
     }

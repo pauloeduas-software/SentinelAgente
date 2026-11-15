@@ -26,12 +26,14 @@ public sealed class TelemetryServiceTests : IAsyncDisposable
     {
         public volatile bool Connected;
         public volatile bool Accepts = true;
+        public volatile bool Throws;
         public Channel<string> Sent { get; } = Channel.CreateUnbounded<string>();
 
         public bool IsConnected => Connected;
 
         public Task<bool> TrySendAsync(OutgoingMessage message, CancellationToken cancellationToken)
         {
+            if (Throws) throw new InvalidOperationException("envio quebrado");
             if (!Accepts) return Task.FromResult(false);
             Sent.Writer.TryWrite(System.Text.Encoding.UTF8.GetString(message.Json.Span));
             return Task.FromResult(true);
@@ -89,6 +91,19 @@ public sealed class TelemetryServiceTests : IAsyncDisposable
 
         Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("descartada"))));
         _link.Accepts = true;
+
+        Assert.StartsWith("""{"Type":"Telemetry""", await ReadAsync());
+    }
+
+    [Fact]
+    public async Task Envio_que_lanca_nao_para_as_amostras_seguintes()
+    {
+        _link.Connected = true;
+        _link.Throws = true;
+        await StartAsync(new CountingCpu());
+
+        Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("A amostra de telemetria falhou"))));
+        _link.Throws = false;
 
         Assert.StartsWith("""{"Type":"Telemetry""", await ReadAsync());
     }
