@@ -54,7 +54,7 @@ SentinelAgente/
 │   ├── Commands/                  # a lista fechada de ações, um arquivo por comando (A5)
 │   └── Service/                   # a vida do serviço: iniciar, parar, avisar o systemd
 ├── tests/                         # as mesmas pastas do agente
-│   └── testdata/                  # cópias reais de /proc e /sys, para os leitores
+│   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
 ├── packaging/                     # o .deb: a unidade do systemd e os scripts de instalar e remover (A3)
 └── docs/
 ```
@@ -79,5 +79,6 @@ esconda o sistema operacional. Se o Windows vier, cada função ganha a sua vers
 ### Testes
 
 O projeto de teste repete as pastas do agente. Quem lê arquivo do sistema recebe o caminho base por
-parâmetro, e o teste aponta para `testdata/` — o teste não depende da máquina que o roda, e uma máquina
-estranha que deu problema vira uma cópia em `testdata/` e um teste.
+parâmetro, e o teste aponta para `testdata/` — o teste não depende da máquina que o roda. O que está em
+`testdata/` é inventado no formato real, nunca copiado de uma máquina: uma máquina estranha que deu problema
+vira um exemplo com o mesmo formato e valores inventados, e um teste.

@@ -41,6 +41,8 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
   `systemctl stop` (A6).
 - **Buffer offline e lista de programas esperam o SentinelWeb:** o servidor precisa ler a hora da coleta
   (A9) e guardar os programas (A10) antes de o agente ligar os dois.
+- **Nunca dado verdadeiro no repositório:** testdata, exemplo e doc são inventados no formato real; nada
+  copiado da máquina, da rede ou da conta (MAC, IP, hostname, serial, processos, programas).
 - **Só pt-BR** em log, comentário e docs.
 
 ## Não volta
