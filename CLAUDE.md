@@ -28,9 +28,9 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
 
 ## Regras do agente inteiro
 
-- **O HWID é uma fila do firmware:** SHA-256 do serial do produto, senão o da placa, senão o UUID, o primeiro
-  que não for de fábrica (lista do SentinelWeb), sem `-`, `:` e espaço, em minúsculas. Nada serve, não sobe;
-  MAC e machine-id não entram. A fila só cresce no fim: mexer no começo duplica máquina cadastrada (A13).
+- **O HWID é o id da instalação:** um UUID sorteado no primeiro arranque e guardado em
+  `/var/lib/sentinel-agent/hwid`, como o `agentid` do GLPI. Quem reconhece a máquina reinstalada é o SentinelWeb,
+  pelo `BiosSerial` (o do produto, senão o da placa) e pelo `SystemUuid`; valor de fábrica vai nulo (A20).
 - **Rodar de verdade é com sudo:** serial e UUID do DMI são só do root.
 - **Comando é lista fechada:** `SHUTDOWN`, `REBOOT` e `SUSPEND`, cada um com um executável fixo e sem shell.
   O resto é recusado e vai para o log, e o resultado do `systemctl` também; os bloqueios do logind valem (A5, A18).
@@ -58,6 +58,6 @@ Decidido; não proponha de novo:
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A20`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A21`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

@@ -50,4 +50,5 @@ sudo dotnet run --project SentinelAgente -- \
 ```
 
 O primeiro contato troca o segredo pelo token e apaga o arquivo do segredo; dali em diante, basta o
-`--Server:TokenFile`. Instalado pelo pacote, o agente lê tudo do `agent.json`.
+`--Server:TokenFile`. O HWID é sorteado na primeira vez e fica em `/var/lib/sentinel-agent/hwid`, também na
+máquina de desenvolvimento: apagá-lo dá uma máquina nova no SentinelWeb. Instalado pelo pacote, o agente lê tudo do `agent.json`.

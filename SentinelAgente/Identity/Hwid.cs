@@ -1,153 +1,88 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-
 namespace SentinelAgente.Identity;
 
-/// <summary>A máquina não tem de onde tirar o HWID; a mensagem diz o que foi lido.</summary>
+/// <summary>O HWID não pôde ser lido ou gravado; a mensagem diz o que fazer.</summary>
 public sealed class HwidException(string message) : Exception(message);
 
 /// <summary>
-/// O HWID, a chave da máquina no SentinelWeb (A13): o SHA-256 do primeiro dado
-/// do firmware que não for falso, nesta ordem — o serial do produto, o serial da
-/// placa-mãe e o UUID. Sem nenhum, o agente não sobe: não inventa identidade,
-/// porque número sorteado e <c>/etc/machine-id</c> mudam quando o sistema é
-/// reinstalado.
+/// O HWID, o id desta instalação do agente (A20): um UUID sorteado no primeiro
+/// arranque e guardado em disco, como o <c>agentid</c> do GLPI Agent
+/// (<c>_handlePersistentState</c>, em <c>lib/GLPI/Agent.pm</c>). Ele não vem do
+/// hardware: quem diz que a máquina reinstalada é a mesma é o SentinelWeb, pelo
+/// serial e pelo UUID do firmware que o handshake leva (a CV de lá).
 /// </summary>
 /// <remarks>
-/// A ordem não muda e a fila só cresce no fim: mexer no começo dá outro HWID a
-/// máquinas já cadastradas, e o servidor prende o token ao HWID.
+/// O arquivo some com o disco formatado e com o <c>apt purge</c>: a instalação
+/// nova sorteia outro. Apagá-lo à mão dá o mesmo resultado, e o token, preso ao
+/// HWID antigo, passa a ser recusado com 1008 até o recadastro.
 /// </remarks>
-public static partial class Hwid
+public static class Hwid
 {
-    public const string DmiDirectory = "/sys/class/dmi/id";
+    /// <summary>Ao lado do token, no <c>StateDirectory</c> do serviço.</summary>
+    public const string DefaultFile = "/var/lib/sentinel-agent/hwid";
 
-    /// <summary>
-    /// Os seriais que a fábrica deixou em branco, comparados sem separadores. A
-    /// mesma lista do SentinelWeb
-    /// (<c>server/modules/reconciliation/helpers/normalize-identity.helper.ts</c>,
-    /// as decisões D46 e CT de lá): mudou lá, muda aqui.
-    /// </summary>
-    private static readonly HashSet<string> FactorySerials = new[]
+    /// <summary>O HWID gravado, ou um novo, gravado antes de voltar.</summary>
+    public static string ReadOrCreate(string path = DefaultFile)
     {
-        "to be filled by o.e.m.", "to be filled by oem", "system serial number", "default string",
-        "chassis serial number", "not applicable", "not specified", "none", "n/a", "na", "null",
-        "unknown", "invalid", "o.e.m.", "oem", "0123456789", "123456789", "00000000",
-        "default", "base board serial number", "baseboard serial number", "not available", "not present",
-        "1234567890", "1234567",
-    }.Select(Compact).ToHashSet();
-
-    /// <summary>
-    /// UUIDs que não identificam nada, a lista do SentinelWeb (D46 e CT): zeros,
-    /// só <c>f</c>, o da AMI, os dois que o osquery acrescenta
-    /// (<c>kPlaceholderHardwareUUIDList</c>, em <c>osquery/core/system.cpp</c>) e
-    /// os dois de fábrica na ordem de bytes que o kernel usa no SMBIOS anterior
-    /// ao 2.6 (<c>dmi_save_uuid</c>, em <c>drivers/firmware/dmi_scan.c</c>).
-    /// </summary>
-    private static readonly HashSet<string> UselessUuids =
-    [
-        "00000000-0000-0000-0000-000000000000",
-        "ffffffff-ffff-ffff-ffff-ffffffffffff",
-        "03000200-0400-0500-0006-000700080009",
-        "03020100-0504-0706-0809-0a0b0c0d0e0f",
-        "10000000-0000-8000-0040-000000000000",
-        "00020003-0004-0005-0006-000700080009",
-        "00010203-0405-0607-0809-0a0b0c0d0e0f",
-    ];
-
-    /// <summary>
-    /// Calcula o HWID. Os três arquivos são só do root (<c>0400</c> no kernel):
-    /// sem sudo, a leitura falha e o erro diz isso.
-    /// </summary>
-    public static string Read(string dmiDirectory = DmiDirectory)
-    {
-        var productSerial = ReadAttribute(dmiDirectory, "product_serial");
-        if (IsRealSerial(productSerial))
-            return Hash(productSerial!);
-
-        var boardSerial = ReadAttribute(dmiDirectory, "board_serial");
-        if (IsRealSerial(boardSerial))
-            return Hash(boardSerial!);
-
-        var uuid = ReadAttribute(dmiDirectory, "product_uuid");
-        if (IsRealUuid(uuid))
-            return Hash(uuid!);
-
-        throw new HwidException(
-            $"Nenhum dado do firmware identifica esta máquina: product_serial \"{productSerial}\", " +
-            $"board_serial \"{boardSerial}\" e product_uuid \"{uuid}\" são valores de fábrica.");
-    }
-
-    /// <summary>
-    /// A conta do agente antigo, que a A13 manteve: tira <c>-</c>, <c>:</c> e
-    /// espaço, passa para minúsculas e devolve o SHA-256 em hexadecimal minúsculo.
-    /// </summary>
-    internal static string Hash(string value)
-    {
-        var normalized = value.Trim().Replace("-", "").Replace(":", "").Replace(" ", "").ToLowerInvariant();
-        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(normalized)));
-    }
-
-    /// <summary>
-    /// Serial de verdade: sem os separadores (a forma que vai para o hash), fora
-    /// da lista, com 4 caracteres ou mais e sem ser um caractere repetido. Com os
-    /// separadores, <c>0000-0000</c> passaria e daria o mesmo HWID a toda máquina
-    /// com ele.
-    /// </summary>
-    internal static bool IsRealSerial(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return false;
-
-        var compact = Compact(value);
-        return !FactorySerials.Contains(compact) && compact.Length >= 4 && !RepeatedCharacter().IsMatch(compact);
-    }
-
-    /// <summary>Minúsculas, sem <c>-</c>, <c>:</c> e espaço: o mesmo <c>compactar</c> do SentinelWeb.</summary>
-    private static string Compact(string value) =>
-        new(value.ToLowerInvariant().Where(c => c is not ('-' or ':') && !char.IsWhiteSpace(c)).ToArray());
-
-    /// <summary>UUID de verdade: no formato de UUID e fora da lista.</summary>
-    internal static bool IsRealUuid(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return false;
-
-        var lower = value.Trim().ToLowerInvariant().Replace("{", "").Replace("}", "");
-        return UuidFormat().IsMatch(lower) && !UselessUuids.Contains(lower);
-    }
-
-    /// <summary>O valor do arquivo, ou <c>null</c> quando o firmware não o tem.</summary>
-    private static string? ReadAttribute(string dmiDirectory, string name)
-    {
-        var path = Path.Combine(dmiDirectory, name);
         try
         {
-            return File.ReadAllText(path).Trim();
-        }
-        catch (FileNotFoundException)
-        {
-            return null;
-        }
-        catch (DirectoryNotFoundException)
-        {
-            return null;
+            if (File.Exists(path))
+            {
+                var stored = File.ReadAllText(path).Trim();
+                if (Guid.TryParseExact(stored, "D", out var id)) return id.ToString();
+
+                // Sortear outro aqui trocaria a identidade em silêncio; o
+                // arquivo só fica assim mexido à mão, e quem mexeu decide.
+                throw new HwidException(
+                    $"O arquivo \"{path}\" não tem um HWID válido. Apague-o para o agente sortear outro; " +
+                    "o token desta máquina deixa de valer, e o recadastro pede o segredo de instalação.");
+            }
+
+            var created = Guid.NewGuid().ToString();
+            Write(path, created);
+            return created;
         }
         catch (UnauthorizedAccessException)
         {
-            throw new HwidException(
-                $"Sem permissão para ler \"{path}\": o agente precisa rodar como root (sudo), " +
-                "e o SELinux ou o AppArmor não pode bloquear a leitura.");
+            throw new HwidException($"Sem permissão para \"{path}\": o agente precisa rodar como root (sudo).");
         }
         catch (IOException e)
         {
-            throw new HwidException($"Falha ao ler \"{path}\": {e.Message}");
+            throw new HwidException($"Falha ao ler ou gravar \"{path}\": {e.Message}");
         }
     }
 
-    [GeneratedRegex(@"^(.)\1+$")]
-    private static partial Regex RepeatedCharacter();
+    /// <summary>
+    /// Num temporário que depois toma o lugar do definitivo, como o token: o
+    /// agente que cai no meio não deixa um HWID pela metade.
+    /// </summary>
+    private static void Write(string path, string hwid)
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(path))!;
+        Directory.CreateDirectory(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
-    [GeneratedRegex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")]
-    private static partial Regex UuidFormat();
+        var temporary = Path.Combine(directory, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            using (var stream = new FileStream(temporary, new FileStreamOptions
+            {
+                Mode = FileMode.CreateNew,
+                Access = FileAccess.Write,
+                // Não é segredo: ele vai no fio e aparece no painel.
+                UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite |
+                                 UnixFileMode.GroupRead | UnixFileMode.OtherRead,
+            }))
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.Write(hwid + "\n");
+                writer.Flush();
+                stream.Flush(flushToDisk: true);
+            }
+
+            File.Move(temporary, path, overwrite: false);
+        }
+        finally
+        {
+            File.Delete(temporary);
+        }
+    }
 }

@@ -1,12 +1,11 @@
-using SentinelAgente.Identity;
-
 namespace SentinelAgente.Inventory;
 
 internal sealed record DmiData(string? BiosSerial, string? SystemUuid, string? Manufacturer, string? HardwareModel);
 
 /// <summary>
 /// O que o firmware diz da máquina, pelo <c>/sys/class/dmi/id</c>. Valor de
-/// fábrica vai nulo, e o SentinelWeb mantém o que já tinha.
+/// fábrica vai nulo, e o SentinelWeb mantém o que já tinha. O serial e o UUID
+/// são só do root (<c>0400</c> no kernel).
 /// </summary>
 internal static class DmiInfo
 {
@@ -28,15 +27,29 @@ internal static class DmiInfo
 
     public static DmiData Read(SystemRoot root)
     {
-        var serial = Value(root, "product_serial");
         var uuid = Value(root, "product_uuid");
         var manufacturer = Name(root, "sys_vendor");
 
         return new DmiData(
-            Hwid.IsRealSerial(serial) ? serial : null,
-            Hwid.IsRealUuid(uuid) ? uuid : null,
+            Serial(root),
+            FactoryValues.IsRealUuid(uuid) ? uuid : null,
             manufacturer,
             Model(root, manufacturer));
+    }
+
+    /// <summary>
+    /// O serial do produto, e o da placa-mãe quando o do produto é de fábrica: a
+    /// troca que o GLPI faz com o <c>mserial</c> (<c>Blacklist::processBlackList</c>,
+    /// em <c>src/Blacklist.php</c>). No PC montado, só a placa tem serial, e é por
+    /// ele que o SentinelWeb reconhece a máquina reinstalada (A20).
+    /// </summary>
+    private static string? Serial(SystemRoot root)
+    {
+        var product = Value(root, "product_serial");
+        if (FactoryValues.IsRealSerial(product)) return product;
+
+        var board = Value(root, "board_serial");
+        return FactoryValues.IsRealSerial(board) ? board : null;
     }
 
     /// <summary>

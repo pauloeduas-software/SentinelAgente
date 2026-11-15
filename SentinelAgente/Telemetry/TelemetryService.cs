@@ -29,7 +29,7 @@ internal sealed partial class TelemetryService(
         {
             while (!link.IsConnected) await Task.Delay(timings.ConnectedPoll, stoppingToken);
 
-            // A conexão só sobe com o HWID lido (A13): aqui ele não falta.
+            // A conexão só sobe com o HWID gravado (A20): aqui ele já existe.
             var id = hwid();
 
             // A leitura de partida: CPU e rede precisam de uma anterior para a média.

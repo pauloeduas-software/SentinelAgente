@@ -59,9 +59,9 @@ public sealed partial class AgentConnection(
 
         try
         {
-            // A apresentação montada uma vez antes da primeira conexão: a máquina
-            // sem HWID para aqui, com o motivo no journal, e não depois de o
-            // servidor responder (A13).
+            // A apresentação montada uma vez antes da primeira conexão: o HWID que
+            // não abre para aqui, com o motivo no journal, e não depois de o
+            // servidor responder (A20).
             await handshake.CreateAsync(stoppingToken);
 
             while (true)

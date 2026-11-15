@@ -1,5 +1,4 @@
 using System.Net;
-using SentinelAgente.Identity;
 using SentinelAgente.Inventory;
 using SentinelAgente.Protocol;
 
@@ -9,7 +8,17 @@ public sealed class MachineInventoryTests : IDisposable
 {
     private const long GiB = 1024L * 1024 * 1024;
 
+    // O HWID inventado, gravado antes de cada teste: ele não sai do firmware (A20).
+    private const string TestHwid = "7d3a1c20-5b4e-4f61-9a2b-1c0d9e8f7a99";
+
     private readonly string _directory = Directory.CreateTempSubdirectory("sentinel-raiz-").FullName;
+    private readonly string _hwidFile;
+
+    public MachineInventoryTests()
+    {
+        _hwidFile = Path.Combine(_directory, "hwid");
+        File.WriteAllText(_hwidFile, TestHwid + "\n");
+    }
 
     private static string Machine(string name) => Path.Combine(AppContext.BaseDirectory, "testdata", "maquinas", name);
 
@@ -26,15 +35,15 @@ public sealed class MachineInventoryTests : IDisposable
 
     private static InterfaceAddress Ip(string address, int prefix) => new(IPAddress.Parse(address), prefix);
 
-    private static HandshakePayload Read(string root) =>
-        new MachineInventory(root, name => Addresses.GetValueOrDefault(name) ?? []).Create();
+    private HandshakePayload Read(string root) =>
+        new MachineInventory(root, name => Addresses.GetValueOrDefault(name) ?? [], _hwidFile).Create();
 
     [Fact]
     public void Monta_a_ficha_do_notebook()
     {
         Assert.Equal(new HandshakePayload
         {
-            Hwid = Hwid.Hash("B4C04F4B"),
+            Hwid = TestHwid,
             Hostname = "nb-financeiro-07",
             OsVersion = "Ubuntu 24.04",
             CpuModel = "Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz",
@@ -57,12 +66,12 @@ public sealed class MachineInventoryTests : IDisposable
     }
 
     [Fact]
-    public void Valor_de_fabrica_vai_nulo()
+    public void No_pc_montado_vai_o_serial_da_placa_e_o_resto_de_fabrica_vai_nulo()
     {
         var payload = Read(Machine("pc-montado"));
 
-        Assert.Equal(Hwid.Hash("200164387600001"), payload.Hwid);
-        Assert.Null(payload.BiosSerial);
+        // O serial do produto é de fábrica, e o da placa toma o lugar, como no GLPI.
+        Assert.Equal("200164387600001", payload.BiosSerial);
         Assert.Null(payload.SystemUuid);
         Assert.Null(payload.Manufacturer);
         Assert.Null(payload.HardwareModel);
@@ -206,11 +215,16 @@ public sealed class MachineInventoryTests : IDisposable
     }
 
     [Fact]
-    public void Sem_dado_do_firmware_nao_sobe()
+    public void Sem_dado_do_firmware_a_maquina_sobe_sem_serial()
     {
         Write("sys/class/dmi/id/product_serial", "Default string");
+        Write("sys/class/dmi/id/board_serial", "Default string");
 
-        Assert.Throws<HwidException>(() => Read(_directory));
+        var payload = Read(_directory);
+
+        Assert.Equal(TestHwid, payload.Hwid);
+        Assert.Null(payload.BiosSerial);
+        Assert.Null(payload.SystemUuid);
     }
 
     private void Write(string relative, string content)

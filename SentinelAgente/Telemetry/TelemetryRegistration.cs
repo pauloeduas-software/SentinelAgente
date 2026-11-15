@@ -30,7 +30,7 @@ public static class TelemetryRegistration
             provider.GetRequiredService<IServerLink>(),
             provider.GetServices<ITelemetryCollector>(),
             provider.GetRequiredService<TelemetryTimings>(),
-            () => Hwid.Read(Hwid.DmiDirectory),
+            () => Hwid.ReadOrCreate(),
             provider.GetRequiredService<ILogger<TelemetryService>>()));
         return services;
     }

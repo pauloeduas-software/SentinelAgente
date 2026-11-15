@@ -40,7 +40,7 @@ SentinelAgente/
 │   ├── Config/                    # BASE. endereço do servidor, token, intervalo da telemetria
 │   ├── Connection/                # BASE. o WebSocket com o /agent-hub: token, handshake a cada conexão, reconexão
 │   ├── Protocol/                  # BASE. o envelope e as mensagens, espelho do agent-protocol.types.ts
-│   ├── Identity/                  # o HWID (A13)
+│   ├── Identity/                  # o HWID, sorteado na instalação (A20)
 │   ├── Inventory/                 # o que o handshake leva: nome, sistema, rede, serial, fabricante, RAM (A14)
 │   ├── Software/                  # os programas instalados, pelo dpkg ou rpm (A10)
 │   ├── Telemetry/                 # a amostra periódica: um coletor por métrica

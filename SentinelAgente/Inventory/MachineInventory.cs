@@ -9,28 +9,30 @@ namespace SentinelAgente.Inventory;
 /// poucos arquivos, e assim a peça trocada aparece na próxima.
 /// </summary>
 /// <remarks>
-/// O HWID é lido uma vez. Sem ele o agente não sobe (A13): a exceção sai da
-/// primeira conexão e para o serviço.
+/// O HWID é lido, ou sorteado, uma vez (A20). Se o arquivo dele não abre, a
+/// exceção sai da primeira conexão e para o serviço.
 /// </remarks>
 public sealed class MachineInventory : IHandshakeSource
 {
     private readonly SystemRoot _root;
     private readonly Func<string, IReadOnlyList<InterfaceAddress>> _addressesOf;
+    private readonly string _hwidFile;
     private string? _hwid;
 
-    public MachineInventory() : this("/", PrimaryNetwork.SystemAddresses) { }
+    public MachineInventory() : this("/", PrimaryNetwork.SystemAddresses, Hwid.DefaultFile) { }
 
-    internal MachineInventory(string root, Func<string, IReadOnlyList<InterfaceAddress>> addressesOf)
+    internal MachineInventory(string root, Func<string, IReadOnlyList<InterfaceAddress>> addressesOf, string hwidFile)
     {
         _root = new SystemRoot(root);
         _addressesOf = addressesOf;
+        _hwidFile = hwidFile;
     }
 
     public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Create());
 
     internal HandshakePayload Create()
     {
-        _hwid ??= Hwid.Read(_root.Combine("sys/class/dmi/id"));
+        _hwid ??= Hwid.ReadOrCreate(_hwidFile);
         var dmi = DmiInfo.Read(_root);
         var network = PrimaryNetwork.Read(_root, _addressesOf);
 

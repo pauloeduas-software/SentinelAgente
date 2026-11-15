@@ -69,13 +69,13 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 
 | Campo | O servidor | Onde o Linux guarda |
 |---|---|---|
-| `Hwid` | a chave da máquina (`endpoints.hwid`, único) | calculado em `Identity/Hwid.cs` ([A13](../decisoes/protocolo.md#a13--o-hwid-é-uma-fila-de-três-dados-do-firmware)) |
+| `Hwid` | a chave da conexão (`endpoints.hwid`, único); HWID nunca visto com o serial e o UUID de uma máquina desligada herda a linha dela ([CV](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#cv--a-máquina-reinstalada-herda-a-própria-linha-como-no-glpi)) | um UUID sorteado na instalação e guardado em `/var/lib/sentinel-agent/hwid` (`Identity/Hwid.cs`, [A20](../decisoes/protocolo.md#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi)) |
 | `Hostname` | o nome da máquina na tela; sinal `HOSTNAME` da reconciliação. Ausente vira "desconhecido" | `/proc/sys/kernel/hostname`, sem o domínio |
 | `OsVersion` | a aba Máquina mostra. Ausente vira "desconhecido" | `/etc/os-release`, `NAME VERSION_ID` (sem `NAME`, "Linux"; versão que é data de snapshot não vai); vai sempre |
 | `CpuModel` | a aba Máquina mostra | `/proc/cpuinfo` (`model name`); no ARM, não vai |
 | `MacAddress` | a aba Máquina mostra | `/sys/class/net/<placa>/address` da placa da rota padrão de menor métrica, com o túnel de VPN para trás ([A15](../decisoes/protocolo.md#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo)) |
 | `LocalIp` | a aba Máquina mostra | o IPv4 dessa placa na rede do gateway |
-| `BiosSerial` | sinal `SERIAL` da reconciliação, o de 100 pontos | `/sys/class/dmi/id/product_serial` (só root); de fábrica, não vai |
+| `BiosSerial` | sinal `SERIAL` da reconciliação, o de 100 pontos; com o `SystemUuid`, reconhece a máquina reinstalada | `/sys/class/dmi/id/product_serial`, e o `board_serial` quando ele é de fábrica (só root); os dois de fábrica, não vai |
 | `SystemUuid` | sinal `UUID` da reconciliação | `/sys/class/dmi/id/product_uuid` (só root); de fábrica, não vai |
 | `Manufacturer` | grava | `/sys/class/dmi/id/sys_vendor`; de fábrica, não vai |
 | `HardwareModel` | grava. **Nunca** `Model` | `/sys/class/dmi/id/product_name`; na Lenovo, sempre o `product_version` |
@@ -133,7 +133,7 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
   | `TopProcesses` | `Telemetry/Processes/TopProcesses.cs` | os 10 de maior `VmRSS`, um por PID, com o nome do `comm` |
 
 - **Máquina física ou VM.** A VM tem placa com `device/` (virtio, netvsc). No contêiner (LXC, Docker), a placa
-  é uma veth e a rede vai zerada — e o agente nem é para ele: o firmware que ele leria é o do hospedeiro (A13).
+  é uma veth e a rede vai zerada — e o agente nem é para ele: o serial que ele mandaria é o do hospedeiro (A20).
 - **No ZFS, cada dataset é um disco** com o espaço livre do pool inteiro, como o Telegraf e o `df` mostram:
   somar os totais conta o pool mais de uma vez. O servidor não soma.
 - **O envio que não chegou não para nada:** a conexão que cai no meio do envio devolve `false` ao

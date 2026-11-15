@@ -6,12 +6,14 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15 e A16.
+> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15, A16 e A20.
 
 ---
 
 ## A4 — O HWID continua o do agente antigo
 
+> **Superada por [A20](#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi):** o HWID deixa de vir do firmware; é um UUID sorteado na instalação.
+>
 > **Superada em parte por [A13](#a13--o-hwid-é-uma-fila-de-três-dados-do-firmware):** a conta continua, mas a
 > lista de seriais genéricos passa a ser a do SentinelWeb, e o UUID do firmware entra quando os dois seriais
 > são genéricos.
@@ -197,6 +199,9 @@ checagens do Tactical RMM (CPU, disco e serviço a cada 120 s, com alerta), que 
 
 ## A13 — O HWID é uma fila de três dados do firmware
 
+> **Superada por [A20](#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi):** o HWID é um UUID sorteado na instalação, e quem reconhece a máquina
+> reinstalada é o SentinelWeb, pelo serial e pelo UUID. A fila sobrevive no `BiosSerial`: o do produto, senão o da placa.
+
 **Decidido** (2026-11-15): o HWID é o SHA-256 do primeiro dado do firmware que não for falso, nesta ordem:
 
 1. `/sys/class/dmi/id/product_serial`, o serial do produto;
@@ -312,6 +317,9 @@ máquina mudar é mudança falsa, então cada campo vai na forma que só muda qu
 
 ## A15 — A revisão da identidade e do inventário: o lixo sem separadores, a Lenovo sempre, o túnel pelo tipo
 
+> **Superada em parte por [A20](#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi):** o HWID não tem mais hash; a lista de fábrica continua, e vale para o
+> `BiosSerial` e o `SystemUuid` do handshake.
+
 **Decidido** (2026-11-15, numa revisão do `Identity/` e do `Inventory/` contra o GLPI Agent, o osquery, o Fleet, o
 systemd e o kernel):
 
@@ -392,3 +400,53 @@ hora ([A12](#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)) que
   ([A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)); aqui os discos vão
   um a um, e nada se compara.
 - **Uma placa que saiu e voltou** (o adaptador USB) não soma na velocidade daquela amostra.
+
+---
+
+## A20 — O HWID é o id da instalação, e quem reconhece a máquina é o SentinelWeb, como no GLPI
+
+**Decidido** (2026-11-15), depois de olhar como os outros fazem
+([CV](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#cv--a-máquina-reinstalada-herda-a-própria-linha-como-no-glpi)
+no SentinelWeb):
+
+- **O HWID é um UUID sorteado no primeiro arranque**, gravado em `/var/lib/sentinel-agent/hwid` (`0644`, num
+  temporário que depois toma o lugar do definitivo), e lido de lá daí em diante (`Identity/Hwid.cs`). Ele não vem do
+  hardware, e some com o disco formatado e com o `apt purge`: a instalação nova sorteia outro.
+- **Quem diz que a máquina reinstalada é a mesma é o SentinelWeb**, pelo `BiosSerial` e pelo `SystemUuid` do
+  handshake, com as regras de importação do GLPI. A linha antiga, com o vínculo e a telemetria, passa a ter o HWID
+  novo.
+- **O `BiosSerial` é o serial do produto, senão o da placa-mãe**, a troca que o GLPI faz com o `mserial`
+  (`Blacklist::processBlackList`). No PC montado, só a placa tem serial, e sem ele a máquina reinstalada não seria
+  reconhecida. Valor de fábrica continua nulo, com a lista da A15 (`Inventory/FactoryValues.cs`).
+- **A máquina sem nenhum dado do firmware sobe**, sem `BiosSerial` nem `SystemUuid`: ela só não é reconhecida depois
+  de formatada.
+- **O arquivo mexido à mão não vira outra identidade em silêncio:** o agente para, e o log diz para apagá-lo. Apagado,
+  ele sorteia outro, e o token, preso ao HWID antigo, é recusado com 1008 até o recadastro.
+
+**Supera:** [A4](#a4--o-hwid-continua-o-do-agente-antigo), [A13](#a13--o-hwid-é-uma-fila-de-três-dados-do-firmware) e,
+em parte, a [A15](#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo).
+
+**Por quê:** o HWID tirado do firmware não era imutável. Ele mudava com a placa-mãe, com o serial que a BIOS passa a
+preencher e com cada revisão da regra, que já aconteceu uma vez (a A15), e cada mudança deixava duas linhas da mesma
+máquina no SentinelWeb, sem ferramenta para juntá-las. Os sistemas de inventário olhados separam as duas perguntas:
+
+| | Quem é o agente | Qual é o computador |
+|---|---|---|
+| GLPI | `agentid` e `deviceid` sorteados e guardados em disco (`lib/GLPI/Agent.pm`) | o servidor, pelas regras de importação: serial e UUID, depois o serial (`RuleImportAsset.xml`) |
+| OCS | `DEVICEID` do nome e da hora, em `ocsinv.conf` | o servidor, pelo nome, serial, MAC e modelo juntos (`Duplicate.pm`) |
+| Tactical RMM, Elastic, Wazuh, MeshCentral | um id sorteado ou dado pelo servidor | ninguém: reinstalar duplica |
+| Fleet, osquery | o UUID do firmware | o mesmo UUID, que a VM clonada repete |
+
+O jeito do GLPI é o do tipo do SentinelWeb (inventário de computadores), e o servidor decide com o parque inteiro à
+vista: a lista de fábrica e os valores repetidos em várias máquinas, que o agente sozinho não enxerga.
+
+**Descartado:**
+- **Continuar com o HWID do firmware**, como o Fleet. Ele se apoia num valor que muda, e o Fleet mesmo precisa de
+  `--host-identifier=instance` para a VM clonada.
+- **O `/etc/machine-id`.** Ele também muda na reinstalação, e não traria nada que o UUID sorteado não traga.
+
+**O que fica de fora, declarado:**
+- **A troca de placa-mãe** vira máquina nova no SentinelWeb, como no GLPI, no Jamf e no Intune.
+- **O disco clonado com o agente instalado** leva o HWID e o token juntos: as duas máquinas disputam a mesma conexão.
+  O GLPI Agent também não o detecta. Quem monta imagem apaga `/var/lib/sentinel-agent` antes de gerá-la.
+
