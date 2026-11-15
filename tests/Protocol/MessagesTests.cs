@@ -12,11 +12,12 @@ public sealed class MessagesTests
         {
             Hwid = "abc123",
             Hostname = "pc-01",
+            OsVersion = "Ubuntu 24.04",
             RamTotalBytes = 17_179_869_184,
         });
 
         Assert.Equal(
-            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","RamTotalBytes":17179869184}}""",
+            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Ubuntu 24.04","RamTotalBytes":17179869184}}""",
             Encoding.UTF8.GetString(message.Json.Span));
     }
 

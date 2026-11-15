@@ -70,18 +70,18 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 | Campo | O servidor | Onde o Linux guarda |
 |---|---|---|
 | `Hwid` | a chave da máquina (`endpoints.hwid`, único) | calculado em `Identity/Hwid.cs` ([A13](../decisoes/protocolo.md#a13--o-hwid-é-uma-fila-de-três-dados-do-firmware)) |
-| `Hostname` | o nome da máquina na tela; sinal `HOSTNAME` da reconciliação. Ausente vira "desconhecido" | `/etc/hostname` |
-| `OsVersion` | a aba Máquina mostra. Ausente vira "desconhecido" | `/etc/os-release` (`PRETTY_NAME`) |
-| `CpuModel` | a aba Máquina mostra | `/proc/cpuinfo` (`model name`) |
-| `MacAddress` | a aba Máquina mostra | `/sys/class/net/<placa>/address` |
-| `LocalIp` | a aba Máquina mostra | a placa da rota padrão |
-| `BiosSerial` | sinal `SERIAL` da reconciliação, o de 100 pontos | `/sys/class/dmi/id/product_serial` (só root) |
-| `SystemUuid` | sinal `UUID` da reconciliação | `/sys/class/dmi/id/product_uuid` (só root) |
-| `Manufacturer` | grava | `/sys/class/dmi/id/sys_vendor` |
-| `HardwareModel` | grava. **Nunca** `Model` | `/sys/class/dmi/id/product_name` |
-| `ChassisType` | grava | `/sys/class/dmi/id/chassis_type` |
-| `RamTotalBytes` | grava, em bytes | `/proc/meminfo` (`MemTotal`, em kB) |
-| `DiskTotalBytes` | grava, em bytes | a soma dos discos fixos |
+| `Hostname` | o nome da máquina na tela; sinal `HOSTNAME` da reconciliação. Ausente vira "desconhecido" | `/proc/sys/kernel/hostname`, sem o domínio |
+| `OsVersion` | a aba Máquina mostra. Ausente vira "desconhecido" | `/etc/os-release`, `NAME VERSION_ID`; vai sempre |
+| `CpuModel` | a aba Máquina mostra | `/proc/cpuinfo` (`model name`); no ARM, não vai |
+| `MacAddress` | a aba Máquina mostra | `/sys/class/net/<placa>/address` da placa da rota padrão, física primeiro |
+| `LocalIp` | a aba Máquina mostra | o IPv4 dessa placa na rede do gateway |
+| `BiosSerial` | sinal `SERIAL` da reconciliação, o de 100 pontos | `/sys/class/dmi/id/product_serial` (só root); de fábrica, não vai |
+| `SystemUuid` | sinal `UUID` da reconciliação | `/sys/class/dmi/id/product_uuid` (só root); de fábrica, não vai |
+| `Manufacturer` | grava | `/sys/class/dmi/id/sys_vendor`; de fábrica, não vai |
+| `HardwareModel` | grava. **Nunca** `Model` | `/sys/class/dmi/id/product_name`; na Lenovo, `product_version` |
+| `ChassisType` | grava | **o agente não manda**: o formato (código ou nome) não está fixado no servidor ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)) |
+| `RamTotalBytes` | grava, em bytes | `/proc/meminfo` (`MemTotal`), arredondado para cima em GiB |
+| `DiskTotalBytes` | grava, em bytes | **o agente não manda**: oscila com disco USB, e nenhuma tela mostra ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)) |
 
 - **`MacAddress`, `LocalIp` e `CpuModel` ausentes apagam o valor gravado;** os campos de `BiosSerial` para
   baixo, não: o que não veio fica como estava (`register-handshake.usecase.ts`).
@@ -89,6 +89,9 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
   máquina vinculada a um computador, e a diferença vira uma linha de mudança de hardware (`AssetChange`). A
   comparação é exata: valor que oscila entre um handshake e outro — um pendrive somado no total de disco —
   vira mudança falsa.
+- **Do lado do agente** ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)):
+  quem monta é o `Inventory/MachineInventory.cs`, relido a cada conexão, na forma que só muda quando a máquina
+  muda.
 - `InstalledSoftware` e `LoggedOnUser` o servidor aceita e descarta. O usuário logado o agente não manda
   ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado)); os
   programas, só depois que o servidor passar a guardar

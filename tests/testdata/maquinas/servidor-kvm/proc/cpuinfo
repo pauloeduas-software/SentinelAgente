@@ -1,0 +1,8 @@
+processor	: 0
+vendor_id	: GenuineIntel
+model name	: Intel(R) Xeon(R) CPU           E5-2670 0 @ 2.60GHz
+flags		: fpu vme
+
+processor	: 1
+vendor_id	: GenuineIntel
+model name	: Intel(R) Xeon(R) CPU           E5-2670 0 @ 2.60GHz

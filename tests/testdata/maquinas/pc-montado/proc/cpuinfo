@@ -1,0 +1,8 @@
+processor	: 0
+vendor_id	: GenuineIntel
+model name	: AMD Ryzen 5 5600G with Radeon Graphics
+flags		: fpu vme
+
+processor	: 1
+vendor_id	: GenuineIntel
+model name	: AMD Ryzen 5 5600G with Radeon Graphics

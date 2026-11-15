@@ -45,7 +45,7 @@ public sealed class AgentConnectionTests : IAsyncLifetime
         var payload = first.RootElement.GetProperty("Payload");
         Assert.Equal("abc123", payload.GetProperty("Hwid").GetString());
         Assert.Equal("pc-teste", payload.GetProperty("Hostname").GetString());
-        Assert.False(payload.TryGetProperty("OsVersion", out _), "campo nulo não vai para o fio");
+        Assert.False(payload.TryGetProperty("CpuModel", out _), "campo nulo não vai para o fio");
         Assert.True(await EventuallyAsync(() => connection.IsConnected));
     }
 
@@ -250,7 +250,7 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     private sealed class FixedHandshake : IHandshakeSource
     {
         public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new HandshakePayload { Hwid = "abc123", Hostname = "pc-teste" });
+            ValueTask.FromResult(new HandshakePayload { Hwid = "abc123", Hostname = "pc-teste", OsVersion = "Ubuntu 24.04" });
     }
 
     private sealed class RecordingCommands : ICommandHandler

@@ -6,7 +6,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A4, A9, A10, A11, A12 e A13.
+> Decisões neste arquivo: A4, A9, A10, A11, A12, A13 e A14.
 
 ---
 
@@ -246,3 +246,62 @@ então esta é a hora de fechar a conta.
 - **VM clonada que copia o UUID** ganha o HWID da original, como já acontece com o serial copiado.
 - **Ler os três pede root** (`0400` no kernel, `drivers/firmware/dmi-id.c`): rodado sem sudo, o agente para e
   diz isso.
+
+---
+
+## A14 — O inventário: o que fica estável vai, o que oscila ou não tem formato espera
+
+**Decidido** (2026-11-15): o handshake leva a ficha da máquina, relida a cada conexão
+(`Inventory/MachineInventory.cs`), com estas regras:
+
+| Campo | De onde | A regra |
+|---|---|---|
+| `Hostname` | `/proc/sys/kernel/hostname` (o `gethostname`) | o nome curto, sem o domínio |
+| `OsVersion` | `/etc/os-release` | **sempre vai**, como `NAME VERSION_ID` ("Ubuntu 24.04"); sem `VERSION_ID`, só o `NAME`; sem os-release, "Linux" |
+| `CpuModel` | `/proc/cpuinfo` | o `model name`, com os espaços repetidos virando um; sem ele (ARM), nulo |
+| `MacAddress`, `LocalIp` | `/proc/net/route` e `/sys/class/net` | a placa da rota padrão, física antes de virtual, e de menor métrica; o IPv4 dela na rede do gateway |
+| `BiosSerial`, `SystemUuid` | `/sys/class/dmi/id/product_serial` e `product_uuid` | valor de fábrica (as listas da A13) vai nulo |
+| `Manufacturer`, `HardwareModel` | `sys_vendor` e `product_name` | valor de fábrica (a lista do GLPI Agent) vai nulo; na Lenovo, o modelo é o `product_version` |
+| `RamTotalBytes` | `/proc/meminfo` | o `MemTotal` arredondado para cima em GiB, em bytes |
+
+E dois campos do protocolo o agente **não manda**: `ChassisType` e `DiskTotalBytes`.
+
+**Por quê:** o SentinelWeb compara de `BiosSerial` para baixo, mais `CpuModel` e `OsVersion`, a cada handshake,
+em texto exato, e a diferença vira uma mudança de hardware (`hardware-diff.helper.ts`). Valor que oscila sem a
+máquina mudar é mudança falsa, então cada campo vai na forma que só muda quando a máquina muda:
+
+- **O `PRETTY_NAME` leva a versão pontual** ("Ubuntu 24.04.1 LTS"), e cada atualização viraria uma mudança. O
+  OCS e o Fleet também montam nome e versão (`NAME` + `VERSION_ID`); o Tactical RMM põe o kernel na string, e ela
+  muda a cada atualização. E `OsVersion` ausente o servidor grava como "desconhecido" e conta como mudança
+  (`normalize-payload.helper.ts`): por isso nunca vai nulo.
+- **O `MemTotal` cru varia alguns kB** com o kernel. Os quatro projetos olhados (GLPI Agent, OCS, osquery e
+  Tactical RMM) usam o `MemTotal`, e não a soma dos pentes do DMI; o Tactical arredonda para cima em GiB
+  (`agent/utils.go`, `TotalRAM`).
+- **A placa da rota padrão** é a escolha do Fleet (`networkInterfaceQuery`: rota padrão, menor métrica), e
+  "física" é a do GLPI Agent (`Linux/Networks.pm`: tem `device/`). A VPN de túnel completo vira a rota de menor
+  métrica e ficaria com o IP; com a física na frente, não. A bridge do servidor de VMs (`br0`) serve quando é a
+  única rota. OCS e Tactical mandam todos os IPs, com o `docker0` no meio.
+- **Valor de fábrica nulo** porque o servidor mantém o que já tinha quando o campo de identidade não vem
+  (`register-handshake.usecase.ts`), e não tem lista de genéricos para fabricante e modelo. A troca da Lenovo é a
+  do GLPI Agent, do OCS e do osquery.
+- **`DiskTotalBytes` fica de fora** porque é o mais difícil de deixar estável (pendrive, HD USB com
+  `removable=0`, multipath), nenhuma tela do SentinelWeb o mostra (decisão
+  [BY](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#by--a-aba-máquina-mostra-o-que-o-agente-manda)),
+  e a telemetria já manda os discos um a um. Nenhum dos quatro projetos soma discos no agente.
+- **`ChassisType` fica de fora** porque o formato não está definido no SentinelWeb: o teste de lá manda `"10"`,
+  o código SMBIOS, e o agente falso manda `"Desktop"`.
+
+**Descartado:**
+- **O dmidecode:** o sysfs tem tudo o que o handshake leva, e uma dependência a menos no pacote.
+- **Inventário periódico ou só do que mudou**, como o GLPI Agent e o OCS fazem com hash por seção: aqui o
+  inventário vai no handshake, uma vez por conexão, e é pequeno.
+- **A lista de todas as placas e discos:** o protocolo tem um MAC e um IP.
+- **Tabela de peças para o processador ARM**, como a do gopsutil: o ARM sem DMI nem sobe (A13), e o com DMI é
+  raro.
+
+**O que fica de fora, declarado:**
+- **A RAM é a que o sistema vê**, arredondada: 16 GiB com 1,5 GiB reservados para o vídeo integrado vão como
+  15 GiB.
+- **Sem rota padrão, o MAC e o IP não vão**, e o servidor apaga os que tinha.
+- **`DiskTotalBytes` volta** quando o SentinelWeb mostrar o campo, e **`ChassisType`** quando o servidor fixar o
+  formato.
