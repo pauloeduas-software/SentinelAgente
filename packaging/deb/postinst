@@ -1,0 +1,63 @@
+#!/bin/sh
+# Instala e atualiza (A19). Os dados do site vêm de variáveis da instalação,
+# como no Wazuh e no Datadog:
+#   sudo SENTINEL_URL=wss://… SENTINEL_ENROLL_SECRET=… apt install ./sentinel-agent_….deb
+set -e
+
+config=/etc/sentinel-agent/agent.json
+secret=/etc/sentinel-agent/enroll-secret
+
+if [ "$1" = configure ]; then
+	install -d -m 755 /etc/sentinel-agent
+
+	# O agent.json é da máquina, não do pacote: a atualização não mexe nele, e o
+	# dpkg não pergunta nada. Para trocar o endereço, edite o arquivo.
+	if [ -n "${SENTINEL_URL:-}" ]; then
+		case "$SENTINEL_URL" in
+			*'"'* | *'\'* | *' '*)
+				echo "sentinel-agent: SENTINEL_URL inválido: \"$SENTINEL_URL\"." >&2
+				exit 1 ;;
+		esac
+		if [ -e "$config" ]; then
+			echo "sentinel-agent: $config já existe e ficou como estava; para trocar o endereço, edite o arquivo." >&2
+		else
+			printf '{\n  "Server": {\n    "Url": "%s"\n  }\n}\n' "$SENTINEL_URL" > "$config"
+			chmod 644 "$config"
+		fi
+	fi
+
+	# O segredo vale para a frota inteira: só o root lê, e o agente o apaga
+	# depois do cadastro (A11). Pôr de novo é o recadastro.
+	if [ -n "${SENTINEL_ENROLL_SECRET:-}" ]; then
+		(umask 077 && printf '%s\n' "$SENTINEL_ENROLL_SECRET" > "$secret")
+		chmod 600 "$secret"
+	fi
+
+	if [ ! -e "$config" ]; then
+		cat >&2 <<-MSG
+		sentinel-agent: instalado, mas sem $config o serviço não sobe.
+		  Instale de novo com o endereço e o segredo:
+		    sudo SENTINEL_URL=wss://<servidor>/agent-hub SENTINEL_ENROLL_SECRET=<segredo> apt install --reinstall ./sentinel-agent_….deb
+		MSG
+	fi
+fi
+
+# Daqui para baixo, os trechos que o debhelper (dh_installsystemd) gera.
+if [ "$1" = configure ] || [ "$1" = abort-upgrade ] || [ "$1" = abort-deconfigure ] || [ "$1" = abort-remove ]; then
+	deb-systemd-helper unmask sentinel-agent.service >/dev/null || true
+
+	# Habilita na primeira instalação; na atualização, respeita quem desabilitou.
+	if deb-systemd-helper --quiet was-enabled sentinel-agent.service; then
+		deb-systemd-helper enable sentinel-agent.service >/dev/null || true
+	else
+		deb-systemd-helper update-state sentinel-agent.service >/dev/null || true
+	fi
+
+	# Liga na instalação e reinicia na atualização. Sem o agent.json, o
+	# ConditionPathExists da unidade não deixa subir.
+	if [ -d /run/systemd/system ]; then
+		systemctl --system daemon-reload >/dev/null || true
+		if [ -n "$2" ]; then action=restart; else action=start; fi
+		deb-systemd-invoke "$action" sentinel-agent.service >/dev/null || true
+	fi
+fi

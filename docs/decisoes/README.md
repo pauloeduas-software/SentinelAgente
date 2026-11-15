@@ -14,7 +14,7 @@
 
 | Arquivo | Assunto | Decisões |
 |---|---|---|
-| [`plataforma.md`](./plataforma.md) | **Plataforma** — a linguagem, as pastas e a instalação | A1, A2, A3 |
+| [`plataforma.md`](./plataforma.md) | **Plataforma** — a linguagem, as pastas e a instalação | A1, A2, A3, A19 |
 | [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15, A16 |
 | [`comandos.md`](./comandos.md) | **Comandos** — o que o agente executa | A5, A18 |
 | [`escopo.md`](./escopo.md) | **Escopo** — o que o agente antigo fazia e este não faz | A6, A7, A8, A17 |
@@ -30,6 +30,7 @@ As decisões não se reescrevem, então quando uma corrige a outra isso fica esc
 | **A8** (em parte: os programas instalados) | **A10** | a lista de programas volta, pelo dpkg ou rpm; depende do SentinelWeb guardar e mostrar |
 | **A11** (em parte: o `Ping`) | **A12** | o `Ping` vai a cada 30 a 60 s, e o servidor põe OFFLINE após 2 min; a telemetria é de hora em hora |
 | **A4** (em parte: os genéricos e a máquina sem serial) | **A13** | a lista de seriais genéricos é a do SentinelWeb, e o UUID do firmware entra quando os dois seriais são genéricos |
+| **A3** (em parte: a configuração no pacote) | **A19** | o `agent.json` e o segredo saem de variáveis da instalação, e o serviço só liga com o `agent.json` |
 | **A13** e **A14** (em parte) | **A15** | o serial de fábrica se compara sem separadores e as listas crescem; a Lenovo usa sempre o `product_version`; o túnel se reconhece pelo tipo da placa |
 
 ## Os nomes

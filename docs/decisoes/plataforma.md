@@ -5,7 +5,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A1–A3.
+> Decisões neste arquivo: A1–A3 e A19 (a A3 superada em parte pela A19).
 
 ---
 
@@ -69,6 +69,10 @@ foi pensado ainda contra ele.
 
 ## A3 — O agente é um serviço do systemd, instalado por pacote
 
+> **Superada em parte por [A19](#a19--o-deb-runtime-do-ubuntu-endereço-e-segredo-nas-variáveis-da-instalação):**
+> o pacote não traz a configuração; o `agent.json` e o segredo são escritos pela instalação, a partir de
+> variáveis, e o serviço só liga quando o `agent.json` existe.
+
 **Decidido** (2026-11-13):
 - O agente roda como o serviço `sentinel-agent`, como root: ler a série e o UUID em `/sys/class/dmi/id` e
   desligar a máquina pedem root.
@@ -93,3 +97,89 @@ comportamento normal do Linux, sem nada escondido
 
 **O que fica de fora, declarado:** `.rpm` (Fedora, Red Hat). A mesma configuração de pacote gera os dois
 quando for preciso.
+
+---
+
+## A19 — O `.deb`: runtime do Ubuntu, endereço e segredo nas variáveis da instalação
+
+**Decidido** (2026-11-15), completando a
+[A3](#a3--o-agente-é-um-serviço-do-systemd-instalado-por-pacote):
+
+**Como se instala:**
+
+```bash
+sudo SENTINEL_URL=wss://<servidor>/agent-hub SENTINEL_ENROLL_SECRET=<segredo> apt install ./sentinel-agent_<versão>_amd64.deb
+```
+
+- **O endereço e o segredo vêm de variáveis da instalação**, que o `postinst` lê, como no Wazuh
+  (`WAZUH_MANAGER`, `WAZUH_ENROLLMENT_TOKEN`) e no Datadog (`DD_API_KEY`). O `postinst` escreve
+  `/etc/sentinel-agent/agent.json` (`0644`) com o `Server:Url` e `/etc/sentinel-agent/enroll-secret` (`0600`).
+  O agente troca o segredo pelo token e o apaga
+  ([A11](./protocolo.md#a11--a-conexão-endereço-na-configuração-wss-e-um-token-por-máquina)). O pacote é o
+  mesmo para todos os sites.
+- **O `agent.json` é da máquina, não do pacote.** Ele não vem dentro do `.deb`: o `postinst` o escreve só
+  quando ele não existe. A atualização não mexe nele, e o dpkg não pergunta nada. É o caminho do Telegraf e do
+  Datadog, que geram a configuração na instalação em vez de entregá-la como conffile. Para trocar o endereço,
+  edita-se o arquivo. Já o segredo é escrito toda vez que vem: pôr o segredo de novo é o recadastro.
+- **O serviço só sobe com o `agent.json`** (`ConditionPathExists` na unidade). A instalação sem as variáveis
+  habilita o serviço, mas não o liga, e diz como instalar de novo. A máquina sem configuração não reinicia em
+  laço.
+- **Habilita e liga na instalação, reinicia na atualização**, com os trechos que o `dh_installsystemd` do
+  debhelper gera, copiados à mão (`deb-systemd-helper` e `deb-systemd-invoke`). Quem desabilitou o serviço
+  continua com ele desabilitado depois da atualização. O `prerm` para o serviço só na remoção.
+- **O `remove` guarda o `agent.json` e o token;** instalado de novo, o agente volta com o mesmo token. **O
+  `purge` apaga `/etc/sentinel-agent` e `/var/lib/sentinel-agent`**, como o Datadog e o Wazuh.
+
+**O que vai dentro:**
+- **O agente depende do `dotnet-runtime-10.0` da distribuição**, sem levar o .NET junto. Ele está no arquivo
+  do Ubuntu 24.04 e 26.04, nos canais `-updates` e `-security`. Quem corrige o .NET é a atualização de
+  segurança do Ubuntu, e não um pacote novo do agente. O pacote tem uns 430 KB.
+- **O binário fica em `/usr/lib/sentinel-agent/`**, como o Jellyfin (`/usr/lib/jellyfin`), e a unidade em
+  `/usr/lib/systemd/system/`. O `sentinel-agent` é o executável do .NET que acha o runtime pelo
+  `/etc/dotnet/install_location`: no `ps` aparece `sentinel-agent`, e não `dotnet`
+  ([A6](./escopo.md#a6--nada-escondido-camuflagem-proteção-do-binário-e-driver-de-kernel-saem)).
+- **A unidade:** `Type=notify` (o agente avisa quando está pronto), `Restart=on-failure` a cada 30 s,
+  `After=network-online.target` e `StateDirectory=sentinel-agent` com `0700`, onde o token mora. Ela não leva
+  `ProtectSystem` e afins, como nenhum dos agentes olhados.
+
+**Como se monta:** `./packaging/build-deb.sh` (ou `… arm64`) gera `artifacts/sentinel-agent_<versão>_<arq>.deb`
+com o `dotnet publish` e o `dpkg-deb`, sem root e sem nada além do SDK. A versão é a `<Version>` do
+`SentinelAgente.csproj`. O pacote traz o `copyright` e o `changelog.gz` que a política do Debian pede.
+
+**Descartado:**
+- **Levar o .NET dentro do pacote** (self-contained, como o Jellyfin) ou compilar nativo (Native AOT). Os dois
+  funcionam no Debian, que não tem o .NET no arquivo, mas aí cada correção de segurança do .NET pede um pacote
+  novo do agente. O pacote passaria de 430 KB para 20 a 70 MB.
+- **Um pacote por site com o endereço e o segredo dentro**, como o `fleetctl package --enroll-secret` do Fleet
+  e o script gerado do Tactical RMM. Cada site teria de montar o seu, e o segredo da frota ficaria num arquivo
+  que circula.
+- **O debconf.** Ele perguntaria na tela, o que não serve para instalar em muitas máquinas; o Wazuh tem o
+  arquivo de perguntas, mas não o usa.
+- **O debhelper** (`dpkg-buildpackage`). Ele gera os mesmos scripts, mas pede a pasta `debian/` inteira e
+  pacotes a mais para montar. O PowerShell também monta o `.deb` com o `dpkg-deb` direto
+  (`tools/packaging/packaging.psm1`).
+- **O nfpm ou o fpm** (Fleet, Telegraf, Alloy). Seriam mais uma ferramenta para instalar, para um pacote com
+  quatro arquivos.
+- **`ProtectProc=invisible` na unidade.** No .NET 10 ele impede o agente de perceber que roda no systemd, e o
+  `Type=notify` nunca recebe o "pronto" (a correção é do .NET 11, `dotnet/runtime#125520`).
+
+**Por quê:** é o que os agentes olhados fazem, cada um com uma parte:
+
+| Peça | De onde vem |
+|---|---|
+| endereço e segredo em variáveis da instalação, lidos pelo `postinst` | Wazuh (`register_configure_agent.sh`), Datadog (`install_script.sh.template`) |
+| a configuração escrita na instalação, e não entregue como conffile | Telegraf (`scripts/deb/post-install.sh`), Datadog |
+| o segredo num arquivo só do root, trocado pelo token da máquina | Wazuh 5 (`etc/enrollment_token`), Tactical RMM (`install.go`) |
+| o `prerm` que para só na remoção, e a atualização que reinicia | Telegraf (`pre-remove.sh`), Fleet (`deb.go`), debhelper (`dh_installsystemd`) |
+| o `purge` que apaga a configuração e o estado | Datadog (`postrm`), Wazuh |
+| o runtime do sistema, e o binário em `/usr/lib/<pacote>` | Jellyfin (`jellyfin-packaging/debian`) |
+| o `.deb` montado pelo `dpkg-deb` | PowerShell (`packaging.psm1`) |
+
+**O custo, declarado:**
+- **O segredo aparece no `ps`** enquanto o `apt` roda, e fica no histórico do shell de quem instalou, como no
+  Wazuh e no Datadog. Quem não quer isso escreve os dois arquivos à mão e roda
+  `sudo systemctl restart sentinel-agent`.
+- **Debian e Fedora ficam de fora.** No Debian, o `dotnet-runtime-10.0` vem do repositório da Microsoft
+  (`packages.microsoft.com`), e com ele o mesmo pacote instala. O `.rpm` continua de fora (A3).
+- **A licença do repositório não está definida:** o `copyright` diz isso.
+

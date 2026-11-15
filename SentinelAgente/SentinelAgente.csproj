@@ -4,6 +4,8 @@
     <!-- O nome do binário instalado e do serviço do systemd -->
     <AssemblyName>sentinel-agent</AssemblyName>
     <RootNamespace>SentinelAgente</RootNamespace>
+    <!-- A versão do pacote .deb -->
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

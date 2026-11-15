@@ -1,0 +1,23 @@
+[Unit]
+Description=SentinelAgente: inventário, telemetria e comandos para o SentinelWeb
+Documentation=https://github.com/pauloeduas-software/SentinelAgente
+Wants=network-online.target
+After=network-online.target
+# Sem o agent.json o agente não tem para onde ir: o serviço nem sobe, em vez de
+# reiniciar em laço. A instalação escreve o arquivo (A19).
+ConditionPathExists=/etc/sentinel-agent/agent.json
+
+[Service]
+# O agente avisa quando está pronto (Microsoft.Extensions.Hosting.Systemd).
+Type=notify
+ExecStart=/usr/lib/sentinel-agent/sentinel-agent
+# Como root: o serial do firmware e o desligamento pedem (A3). O systemctl stop
+# para de vez; só a queda reinicia.
+Restart=on-failure
+RestartSec=30
+# Onde o token mora: o systemd cria /var/lib/sentinel-agent só para o root.
+StateDirectory=sentinel-agent
+StateDirectoryMode=0700
+
+[Install]
+WantedBy=multi-user.target

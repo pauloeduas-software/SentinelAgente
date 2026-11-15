@@ -1,0 +1,15 @@
+Package: sentinel-agent
+Version: @VERSION@
+Architecture: @ARCH@
+Maintainer: @MAINTAINER@
+Installed-Size: @SIZE@
+Depends: dotnet-runtime-10.0, systemd
+Section: admin
+Priority: optional
+Homepage: https://github.com/pauloeduas-software/SentinelAgente
+Description: agente do SentinelWeb
+ Serviço do systemd que manda o inventário e a telemetria da máquina ao
+ SentinelWeb e executa os comandos de desligar, reiniciar e suspender.
+ .
+ O endereço do servidor e o segredo de instalação vêm na instalação:
+ sudo SENTINEL_URL=wss://… SENTINEL_ENROLL_SECRET=… apt install ./sentinel-agent_….deb

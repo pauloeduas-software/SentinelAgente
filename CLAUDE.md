@@ -14,6 +14,7 @@ ele. O protocolo é do SentinelWeb; este repositório só fala o que está escri
 ```bash
 dotnet build     # compila
 dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado no global.json)
+./packaging/build-deb.sh   # o .deb em artifacts/ (A19)
 ```
 
 **Antes de dizer que terminou: `dotnet build` e `dotnet test` passando.**
@@ -57,6 +58,6 @@ Decidido; não proponha de novo:
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A19`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A20`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

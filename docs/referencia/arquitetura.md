@@ -54,7 +54,7 @@ SentinelAgente/
 │   └── Service/                   # a vida do serviço: iniciar, parar, avisar o systemd
 ├── tests/                         # as mesmas pastas do agente
 │   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
-├── packaging/                     # o .deb: a unidade do systemd e os scripts de instalar e remover (A3)
+├── packaging/                     # o .deb: a unidade do systemd, os scripts de instalar e remover e o build-deb.sh (A3, A19)
 └── docs/
 ```
 

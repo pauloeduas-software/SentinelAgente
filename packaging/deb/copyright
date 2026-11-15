@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: SentinelAgente
+Source: https://github.com/pauloeduas-software/SentinelAgente
+
+Files: *
+Copyright: os autores do SentinelAgente
+License: a definir
+ O repositório ainda não tem licença.
