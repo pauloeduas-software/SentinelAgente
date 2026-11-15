@@ -35,3 +35,19 @@ bun run agente:falso     # opcional: o protocolo funcionando, para comparar
 O endereço é `ws://localhost:3001/agent-hub`. O segredo de instalação é o `AGENT_ENROLL_SECRET` do `.env` do
 SentinelWeb; vazio, em desenvolvimento o servidor aceita qualquer um. O agente o troca pelo token da máquina
 no primeiro contato e apaga o arquivo.
+
+## Rodar o agente
+
+Com sudo: o serial e o UUID do firmware são só do root, e sem eles o agente não tem HWID. Em desenvolvimento,
+a linha de comando faz o papel do `/etc/sentinel-agent/agent.json`:
+
+```bash
+echo "<AGENT_ENROLL_SECRET>" > /tmp/sentinel-secret && chmod 600 /tmp/sentinel-secret
+sudo dotnet run --project SentinelAgente -- \
+  --Server:Url=ws://localhost:3001/agent-hub \
+  --Server:EnrollSecretFile=/tmp/sentinel-secret \
+  --Server:TokenFile=/tmp/sentinel-token
+```
+
+O primeiro contato troca o segredo pelo token e apaga o arquivo do segredo; dali em diante, basta o
+`--Server:TokenFile`. Instalado pelo pacote, o agente lê tudo do `agent.json`.
