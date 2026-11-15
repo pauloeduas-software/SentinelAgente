@@ -1,3 +1,4 @@
+using SentinelAgente.Commands;
 using SentinelAgente.Inventory;
 
 // O PROCESSO: liga o host e a integração com o systemd (pronto, parada e log no
@@ -8,5 +9,6 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSystemd();
 builder.Services.AddInventory();
+builder.Services.AddCommands();
 
 builder.Build().Run();

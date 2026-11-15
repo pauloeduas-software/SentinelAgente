@@ -168,6 +168,12 @@ confere a cada 60 s.
 - **Não há fila.** Comando para máquina desconectada é recusado na hora (409), nunca executado depois.
 - **Não há resposta.** O servidor diz "Comando enviado" quando a conexão aceitou os bytes; o agente não
   confirma, e mensagem de confirmação seria descartada como tipo desconhecido.
+- **Do lado do agente**
+  ([A5](../decisoes/comandos.md#a5--comando-é-lista-fechada-sem-shell),
+  [A18](../decisoes/comandos.md#a18--o-comando-roda-o-systemctl-direto-respeita-os-bloqueios-e-diz-no-log-como-terminou)):
+  o `Commands/PowerCommands.cs` troca `SHUTDOWN`, `REBOOT` e `SUSPEND` por `/usr/bin/systemctl` `poweroff`,
+  `reboot` e `suspend`, sem shell, e recusa qualquer outra `Action`. Ele dispara e volta; o log diz, com o
+  `CommandId`, se o systemd aceitou ou o motivo da recusa (bloqueio do logind, máquina que não suspende).
 
 ## Quando a conexão fecha
 

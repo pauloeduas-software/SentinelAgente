@@ -5,7 +5,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A5.
+> Decisões neste arquivo: A5 e A18.
 
 ---
 
@@ -40,3 +40,52 @@ quem fala com ele não é o servidor de verdade.
   criptografada (`wss://`) obrigatória e o registro de quem mandou.
 - **A confirmação de execução.** O protocolo não tem resposta do agente; mostrar "executado" na tela começa no
   SentinelWeb, com um tipo de mensagem novo.
+
+---
+
+## A18 — O comando roda o `systemctl` direto, respeita os bloqueios e diz no log como terminou
+
+**Decidido** (2026-11-15), completando a [A5](#a5--comando-é-lista-fechada-sem-shell):
+- **O executável é `/usr/bin/systemctl`, pelo caminho completo**, com o verbo da tabela da A5 como único
+  argumento, sem shell. O `PATH` não escolhe o programa.
+- **O agente dispara e volta.** O `systemctl` pede a ação ao logind e sai assim que ela entra na fila, sem
+  esperar a máquina desligar ou suspender. Ele roda fora da recepção, e o fim da conexão não o interrompe: a
+  ação já foi pedida. Se ele não voltar em 15 s, é morto, e isso vai para o log.
+- **O resultado vai para o log, com o `CommandId`:** aceito pelo systemd, ou recusado com o código de saída e
+  o motivo que o `systemctl` escreveu (a máquina que não suspende, a ação que já está em andamento).
+- **Os bloqueios do logind valem.** O agente não passa `--check-inhibitors=no`: desde o systemd 257 o root
+  também respeita o bloqueio do tipo `block`, e quem o segura (uma atualização de pacotes, um gravador de
+  disco) recebe a recusa no log em vez de ter o trabalho cortado no meio. O bloqueio do tipo `delay` só
+  atrasa, no máximo `InhibitDelayMaxSec` (5 s por padrão).
+- **Ação desconhecida não é normalizada:** `reboot` em minúsculas é recusado como qualquer outro texto. O
+  servidor manda sempre em maiúsculas (`endpoint.schema.ts`).
+
+**Descartado:**
+- **A chamada ao kernel direto**, como o MeshAgent (`syscall(SYS_reboot, …)` em `meshcore/meshinfo.c`): ela
+  pula o systemd, e os serviços não param direito.
+- **O shell**, como o agente do Tactical RMM (`/bin/bash -c "shutdown -h now"` em `agent/rpc.go`). Aqui não há
+  nada para o shell fazer.
+- **O D-Bus do logind direto** (`PowerOffWithFlags`, `CanSuspend`): é a mesma chamada que o `systemctl` faz,
+  mais uma dependência. O `systemctl` ainda cai para o `poweroff.target` quando o logind não responde.
+- **Passar por cima dos bloqueios** (`-i`). Ele só funciona onde a regra do polkit para o root vem instalada
+  (o Ubuntu traz; outras distribuições, só o exemplo), e o que ele corta é justamente o que pediu para não
+  ser cortado.
+- **Uma chave na configuração para desligar os comandos**, como o `--enable-scripts` do Fleet e o
+  `<active-response><disabled>` do Wazuh. Lá, a chave protege da execução de script qualquer; aqui, a lista
+  tem três ações, e quem tem permissão de desligar no painel já é Supervisor.
+- **Descartar `CommandId` repetido.** O servidor gera um id novo por comando e não reenvia (não há fila), e o
+  logind já recusa a segunda ação com a primeira em andamento.
+
+**Por quê:** os agentes olhados confirmam a lista fechada, mas com shell (Tactical RMM) ou sem systemd
+(MeshAgent), e nenhum diz no log por que a ação não aconteceu. Como o protocolo não tem resposta do agente
+(A5), o log é o único lugar onde a recusa aparece: é ali que quem administra cruza o `CommandId` com a
+auditoria do servidor.
+
+**O que fica de fora, declarado:**
+- **A confirmação para a tela.** O Tactical RMM responde "ok" antes de executar, e o Fleet agenda o reboot para
+  10 s depois (`systemd-run --on-active=10s`, em `linux_lock.sh`) só para dar tempo de mandar o resultado.
+  Quando o SentinelWeb ganhar a mensagem de resposta, o agente manda o resultado do `systemctl`, que volta
+  antes de o desligamento começar.
+- **A conexão depois da suspensão.** A máquina volta com o socket aberto e morto; o ping do WebSocket (30 s,
+  com 15 s de espera, em `Connection/ConnectionTimings.cs`) derruba a conexão e o agente reconecta.
+

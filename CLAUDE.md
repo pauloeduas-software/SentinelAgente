@@ -32,7 +32,7 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
   MAC e machine-id não entram. A fila só cresce no fim: mexer no começo duplica máquina cadastrada (A13).
 - **Rodar de verdade é com sudo:** serial e UUID do DMI são só do root.
 - **Comando é lista fechada:** `SHUTDOWN`, `REBOOT` e `SUSPEND`, cada um com um executável fixo e sem shell.
-  O resto é recusado e vai para o log (A5).
+  O resto é recusado e vai para o log, e o resultado do `systemctl` também; os bloqueios do logind valem (A5, A18).
 - **Handshake primeiro, em toda conexão:** sem ele o comando não chega.
 - **Endereço e segredos vêm da configuração, nunca do código:** `wss://` obrigatório (`ws://` só em
   `localhost`), sem opção de desligar a verificação do certificado. Cada máquina tem o seu token, que o
@@ -57,6 +57,6 @@ Decidido; não proponha de novo:
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A18`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A19`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

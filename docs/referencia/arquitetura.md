@@ -50,7 +50,7 @@ SentinelAgente/
 │   │   ├── Network/
 │   │   ├── Processes/             # quais programas estão rodando
 │   │   └── Gpu/                   # uma leitura por fabricante: NVIDIA, AMD, Intel
-│   ├── Commands/                  # a lista fechada de ações, um arquivo por comando (A5)
+│   ├── Commands/                  # a lista fechada de ações e quem roda o systemctl (A5, A18)
 │   └── Service/                   # a vida do serviço: iniciar, parar, avisar o systemd
 ├── tests/                         # as mesmas pastas do agente
 │   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
