@@ -1,0 +1,16 @@
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+
+# A saída do `dotnet publish` e o pacote .deb gerado
+artifacts/
+*.deb
+
+# A configuração local do agente: tem o token
+agent.env
+
+# Claude Code: a configuração pessoal e as cópias de trabalho
+.claude/settings.local.json
+.claude/worktrees/

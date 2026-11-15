@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SentinelAgente.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Cópias reais de /proc e /sys: o teste não depende da máquina que o roda -->
+    <Content Include="testdata/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- O Kestrel faz o papel do /agent-hub nos testes da conexão -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SentinelAgente/SentinelAgente.csproj" />
+  </ItemGroup>
+
+</Project>

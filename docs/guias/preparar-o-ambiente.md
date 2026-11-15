@@ -1,0 +1,37 @@
+# Preparar o ambiente
+
+> Guia. Receita para quem já sabe o que quer fazer — o *porquê* está em
+> [`../referencia/arquitetura.md`](../referencia/arquitetura.md).
+
+---
+
+## O SDK
+
+```bash
+sudo apt install dotnet-sdk-10.0     # no Ubuntu 26.04 o .NET 10 vem do próprio Ubuntu
+dotnet --version                     # 10.0.1xx ou mais novo
+```
+
+O `global.json` pede o SDK 10: com só outra versão instalada, o `dotnet build` recusa e diz qual falta.
+
+## Compilar e testar
+
+```bash
+dotnet build
+dotnet test
+```
+
+O `dotnet test` roda pelo Microsoft.Testing.Platform, ligado no `global.json`.
+
+## Um servidor para conversar
+
+O agente precisa do SentinelWeb de pé. No repositório dele:
+
+```bash
+bun run dev              # a API sobe na 3001
+bun run agente:falso     # opcional: o protocolo funcionando, para comparar
+```
+
+O endereço é `ws://localhost:3001/agent-hub`. O segredo de instalação é o `AGENT_ENROLL_SECRET` do `.env` do
+SentinelWeb; vazio, em desenvolvimento o servidor aceita qualquer um. O agente o troca pelo token da máquina
+no primeiro contato e apaga o arquivo.
