@@ -1,0 +1,6 @@
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 912345678 1203456    0    0    0     0          0         0 912345678 1203456    0    0    0     0       0          0
+  eno1: 845123456789 612345678    0  120    0     0          0     91234 123456789012 98765432    0    0    0     0       0          0
+   br0: 801234567890 600123456    0    0    0     0          0     90123 120123456789 97654321    0    0    0     0       0          0
+ vnet0: 20123456789 15012345    0    0    0     0          0         0 60123456789 45012345    0    0    0     0       0          0

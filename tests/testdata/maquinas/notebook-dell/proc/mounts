@@ -1,0 +1,10 @@
+sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+udev /dev devtmpfs rw,nosuid,relatime,size=8012345k,nr_inodes=2003086,mode=755,inode64 0 0
+tmpfs /run tmpfs rw,nosuid,nodev,noexec,relatime,size=1612345k,mode=755,inode64 0 0
+/dev/nvme0n1p2 / ext4 rw,relatime,errors=remount-ro 0 0
+/dev/nvme0n1p1 /boot/efi vfat rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 0
+/dev/nvme0n1p2 /srv/dados ext4 rw,relatime,errors=remount-ro 0 0
+overlay /var/lib/docker/overlay2/9f3c1e5b7a2d/merged overlay rw,relatime,lowerdir=/var/lib/docker/overlay2/l/ABC:/var/lib/docker/overlay2/l/DEF,upperdir=/var/lib/docker/overlay2/9f3c1e5b7a2d/diff,workdir=/var/lib/docker/overlay2/9f3c1e5b7a2d/work 0 0
+/dev/loop3 /snap/firefox/4848 squashfs ro,nodev,relatime,errors=continue,threads=single 0 0
+/dev/sda1 /media/ana/PEN\040DRIVE vfat rw,nosuid,nodev,relatime,uid=1000,gid=1000,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,showexec,utf8,flush,errors=remount-ro,uhelper=udisks2 0 0

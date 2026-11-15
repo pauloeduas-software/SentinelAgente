@@ -119,6 +119,19 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 - Campo ausente vira zero ou lista vazia (`normalize-payload.helper.ts`).
 - **A tela mostra o total de rede pelos bytes.** `TotalRxGb` e `TotalTxGb` ela só lê quando os bytes não
   vêm (`src/helpers/metrics.helper.ts`).
+- **Do lado do agente**
+  ([A16](../decisoes/protocolo.md#a16--a-telemetria-a-média-desde-a-amostra-anterior-o-disco-como-o-df-a-rede-só-pela-placa-física)):
+  o `Telemetry/TelemetryService.cs` manda a primeira amostra quando a conexão sobe e depois uma por hora; sem
+  conexão, ela é descartada. Cada campo sai de um coletor:
+
+  | Campo | Coletor | O que vai |
+  |---|---|---|
+  | `CpuUsagePercentage` | `Telemetry/Cpu/CpuUsage.cs` | a média desde a amostra anterior, pelo `/proc/stat` (a primeira, de 10 s) |
+  | `RamTotalBytes`, `RamUsedBytes` | `Telemetry/Memory/MemoryUsage.cs` | o `MemTotal` cru e `MemTotal − MemAvailable`, do `/proc/meminfo` |
+  | `Disks` | `Telemetry/Disk/DiskUsage.cs` | cada dispositivo local do `/proc/mounts`, uma vez, sem `tmpfs`, `squashfs`, `overlay` e afins; total e usado como o `df` |
+  | `Network` | `Telemetry/Network/NetworkUsage.cs` | a soma das placas com `device/` no `/proc/net/dev`, e a velocidade média desde a amostra anterior |
+  | `TopProcesses` | `Telemetry/Processes/TopProcesses.cs` | os 10 de maior `VmRSS`, um por PID, com o nome do `comm` |
+
 - **GPU o servidor não recebe hoje.** Não há campo no protocolo, coluna no banco nem lugar na tela: começa
   no SentinelWeb.
 

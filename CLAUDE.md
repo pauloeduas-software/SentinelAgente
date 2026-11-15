@@ -54,6 +54,6 @@ Decidido; não proponha de novo:
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A16`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A17`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

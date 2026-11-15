@@ -6,7 +6,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14 e A15.
+> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15 e A16.
 
 ---
 
@@ -343,3 +343,50 @@ eles que a máquina sai.
 - **A VM com balão de memória** (`virtio_balloon`, a memória dinâmica do Hyper-V) muda o `MemTotal` com o balão, e o
   arredondamento não segura: cada GiB a mais ou a menos vira uma mudança no SentinelWeb.
 - **O Wi-Fi com MAC aleatório** manda um MAC por conexão. O MAC não entra na comparação nem no vínculo, só na tela.
+
+---
+
+## A16 — A telemetria: a média desde a amostra anterior, o disco como o `df`, a rede só pela placa física
+
+**Decidido** (2026-11-15), com o Telegraf, o gopsutil e o Tactical RMM como base. Cada número da amostra de hora em
+hora ([A12](#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)) quer dizer isto:
+
+| Campo | A regra | De onde |
+|---|---|---|
+| `CpuUsagePercentage` | a média desde a amostra anterior, pela diferença da linha `cpu` do `/proc/stat`; contador que volta para trás dá 0 | Telegraf (`plugins/inputs/cpu/cpu.go`: `lastStats`, `totalDelta`) |
+| a primeira amostra | a leitura de partida e a primeira ficam a 10 s uma da outra | Tactical RMM (`agent/agent.go`: `cpu.Percent(10*time.Second)`) |
+| `RamTotalBytes`, `RamUsedBytes` | o `MemTotal` cru, e o usado é `MemTotal − MemAvailable` | gopsutil (`mem/mem_linux.go`), o `free` |
+| `Disks` | o `/proc/mounts`, só dispositivo local (`/dev/…` ou ZFS), sem `tmpfs`, `devtmpfs`, `devfs`, `iso9660`, `overlay`, `aufs` e `squashfs`, um ponto por dispositivo; o nome é o ponto de montagem, o total são os blocos e o usado é `Blocks − Bfree` | Telegraf (`plugins/inputs/disk/sample.conf`), gopsutil (`disk/disk_unix.go`), o `df` |
+| `Network` | só as placas com `/sys/class/net/<placa>/device`; os bytes desde o boot, somados, e a velocidade média desde a amostra anterior | Telegraf (`plugins/inputs/net/net.go`: pula loopback) |
+| `TopProcesses` | os 10 de maior `VmRSS`, um por PID, com o nome do `/proc/<pid>/comm`; sem RSS (thread de kernel), não entra | Tactical RMM (`agent/process.go`: `Resident`) |
+
+- **A primeira amostra vai quando a conexão sobe pela primeira vez**, e depois uma por hora, com ou sem conexão.
+  Sem conexão, a amostra é descartada ([A9](#a9--o-buffer-offline-volta-com-a-hora-da-coleta)), e a leitura
+  anterior avança do mesmo jeito: a próxima é a média da última hora.
+- **Coletor que falha não derruba o serviço:** a parte dele vai zerada, que é o que o servidor grava para o
+  campo ausente, e o motivo vai para o log.
+
+**Por quê:**
+- **A média, e não o instante:** com uma amostra por hora, o uso de um segundo cai num pico ou num vale e não
+  diz nada da hora. A média é o ponto que o gráfico do painel ganha.
+- **A rede só pela placa física:** o que passa pelo túnel da VPN, pela bridge, pelo docker e pelas veth também
+  passa pela placa física, e somar os dois contaria o mesmo byte duas vezes.
+- **Um ponto por dispositivo:** o bind mount e o subvolume do btrfs mostram o mesmo espaço em dois lugares.
+- **O usado como o `df`:** quem confere na máquina vê o mesmo número. A porcentagem que a tela calcula
+  (usado ÷ total) fica um pouco abaixo da do `df`, que divide pelo que o usuário comum pode usar.
+- **Um processo por PID:** o protocolo leva um `Pid` por item, e o Tactical RMM também não junta.
+
+**Descartado:**
+- **Juntar processos pelo nome** (as abas do Chrome numa linha só): pede mudar o significado do `Pid`, e isso
+  começa no SentinelWeb.
+- **Todas as placas de rede, como o Telegraf faz por padrão:** o protocolo tem um `Network` só, e a soma de
+  todas conta o tráfego virtual duas vezes.
+
+**O que fica de fora, declarado:**
+- **A GPU:** o servidor não tem campo, coluna nem tela para ela; começa no SentinelWeb.
+- **Compartilhamento de rede (NFS, CIFS) não entra nos discos:** o espaço é de outra máquina, e o servidor que
+  caiu travaria a leitura.
+- **O pendrive entra nos discos enquanto estiver montado.** A regra contra a oscilação é do handshake
+  ([A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)); aqui os discos vão
+  um a um, e nada se compara.
+- **Uma placa que saiu e voltou** (o adaptador USB) não soma na velocidade daquela amostra.

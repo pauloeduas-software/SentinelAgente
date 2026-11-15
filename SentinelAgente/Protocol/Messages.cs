@@ -31,6 +31,10 @@ public static class Messages
         new(Handshake, JsonSerializer.SerializeToUtf8Bytes(
             new Envelope<HandshakePayload>(Handshake, payload), ProtocolJson.Default.EnvelopeHandshakePayload));
 
+    public static OutgoingMessage CreateTelemetry(TelemetryPayload payload) =>
+        new(Telemetry, JsonSerializer.SerializeToUtf8Bytes(
+            new Envelope<TelemetryPayload>(Telemetry, payload), ProtocolJson.Default.EnvelopeTelemetryPayload));
+
     public static OutgoingMessage CreatePing(string hwid) =>
         new(Ping, JsonSerializer.SerializeToUtf8Bytes(
             new Envelope<PingPayload>(Ping, new PingPayload(hwid)), ProtocolJson.Default.EnvelopePingPayload));
@@ -103,6 +107,7 @@ internal sealed record EnrollResponse(string? Token);
     PropertyNameCaseInsensitive = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(Envelope<HandshakePayload>))]
+[JsonSerializable(typeof(Envelope<TelemetryPayload>))]
 [JsonSerializable(typeof(Envelope<PingPayload>))]
 [JsonSerializable(typeof(IncomingEnvelope))]
 [JsonSerializable(typeof(CommandPayload))]

@@ -22,6 +22,28 @@ public sealed class MessagesTests
     }
 
     [Fact]
+    public void A_telemetria_vai_com_os_nomes_do_servidor()
+    {
+        var message = Messages.CreateTelemetry(new TelemetryPayload
+        {
+            Hwid = "abc123",
+            CpuUsagePercentage = 12.5,
+            RamTotalBytes = 16_000,
+            RamUsedBytes = 4_000,
+            Disks = [new DiskPayload("/", 476.94, 180.5)],
+            Network = new NetworkPayload(1_200, 300, 4_000.5, 800),
+            TopProcesses = [new ProcessPayload(4242, "chrome", 820.3)],
+        });
+
+        Assert.Equal(
+            """{"Type":"Telemetry","Payload":{"Hwid":"abc123","CpuUsagePercentage":12.5,"RamTotalBytes":16000,"RamUsedBytes":4000,""" +
+            """ "Disks":[{"Name":"/","TotalGb":476.94,"UsedGb":180.5}],""".TrimStart() +
+            """ "Network":{"BytesReceived":1200,"BytesSent":300,"RxSpeedKbps":4000.5,"TxSpeedKbps":800},""".TrimStart() +
+            """ "TopProcesses":[{"Pid":4242,"Name":"chrome","RamMb":820.3}]}}""".TrimStart(),
+            Encoding.UTF8.GetString(message.Json.Span));
+    }
+
+    [Fact]
     public void O_ping_leva_o_hwid()
     {
         var message = Messages.CreatePing("abc123");

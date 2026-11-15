@@ -63,6 +63,9 @@ SentinelAgente/
 
 Cada métrica é uma pasta com o seu coletor, e todos entregam a sua parte da mesma amostra. Métrica nova é
 pasta nova, sem mexer nas outras — é como o Telegraf cresce (`plugins/inputs/cpu`, `mem`, `disk`, `net`).
+Cada coletor implementa o `ITelemetryCollector`, preenche a sua parte do `TelemetrySample` e entra no
+`TelemetryRegistration`; quem marca a hora e manda é o `TelemetryService`. Os coletores leem `/proc` e `/sys`
+pelo `SystemRoot` do `Inventory`.
 
 A GPU é a exceção que confirma a regra: dentro dela, uma leitura por fabricante, porque NVIDIA, AMD e Intel
 expõem o uso de formas diferentes.

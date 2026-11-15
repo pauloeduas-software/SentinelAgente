@@ -15,7 +15,7 @@
 | Arquivo | Assunto | Decisões |
 |---|---|---|
 | [`plataforma.md`](./plataforma.md) | **Plataforma** — a linguagem, as pastas e a instalação | A1, A2, A3 |
-| [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15 |
+| [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15, A16 |
 | [`comandos.md`](./comandos.md) | **Comandos** — o que o agente executa | A5 |
 | [`escopo.md`](./escopo.md) | **Escopo** — o que o agente antigo fazia e este não faz | A6, A7, A8 |
 
