@@ -155,3 +155,12 @@ confere a cada 60 s.
   reconecta.
 - **O agente encerrando** leva a máquina a OFFLINE na hora, a não ser que uma conexão mais nova da mesma
   máquina já a tenha substituído.
+- **O HWID do handshake diferente do token** o servidor fecha com o código 1008 ("HWID diferente do token")
+  ([CU](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/acesso.md#cu--a-conexão-com-o-hwid-de-outra-máquina-fecha-com-1008)):
+  a placa ou o firmware mudou depois do cadastro, ou o token veio de outra máquina. O agente diz isso no log,
+  espera o teto e não se recadastra sozinho; o recadastro é pôr o segredo de instalação de novo.
+- **Do lado do agente** (`Connection/AgentConnection.cs`): a conexão que cai antes de 1 minuto conta como falha,
+  e a espera seguinte dobra. O erro que não se conserta tentando de novo (a máquina sem HWID, o `CaFile`
+  ilegível) para o serviço com código de saída 1, e o systemd vê a falha.
+- **Com o segredo de instalação e o token no disco**, o cadastro que não dá certo (409, rede) não impede a
+  conexão: o agente conecta com o token gravado, e o servidor diz se ele ainda vale.

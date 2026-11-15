@@ -31,6 +31,12 @@ public static class SecretFile
         if (secret.Length == 0)
             throw new SecretFileException($"O arquivo \"{path}\" está vazio.");
 
+        // O segredo vai num header HTTP, que recusa quebra de linha: o segredo
+        // colado em duas linhas derrubaria a conexão em vez de dar este erro.
+        if (secret.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)))
+            throw new SecretFileException(
+                $"O arquivo \"{path}\" tem espaço ou quebra de linha no meio do segredo: ele deve ter uma linha só.");
+
         return secret;
     }
 

@@ -1,4 +1,5 @@
 using System.Net.Security;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace SentinelAgente.Connection;
@@ -36,6 +37,8 @@ public sealed class ServerCertificate(X509Certificate2Collection trustedRoots)
         custom.ChainPolicy.CustomTrustStore.AddRange(trustedRoots);
         // Uma CA interna raramente publica lista de revogação: exigir derrubaria a conexão.
         custom.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        // Só certificado de servidor: o de cliente da mesma CA, com o mesmo nome, não serve.
+        custom.ChainPolicy.ApplicationPolicy.Add(new Oid("1.3.6.1.5.5.7.3.1"));
 
         // Os intermediários que o servidor mandou ajudam a montar a cadeia.
         if (chain is not null)

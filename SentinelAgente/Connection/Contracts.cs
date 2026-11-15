@@ -13,6 +13,11 @@ public interface IHandshakeSource
 }
 
 /// <summary>Recebe os comandos que o servidor manda.</summary>
+/// <remarks>
+/// Roda dentro da recepção: enquanto ele não volta, a resposta ao ping do
+/// WebSocket não é lida, e passados 15 s a conexão cai. Quem implementa dispara
+/// a ação e volta, sem esperar o processo terminar.
+/// </remarks>
 public interface ICommandHandler
 {
     Task HandleAsync(CommandPayload command, CancellationToken cancellationToken);

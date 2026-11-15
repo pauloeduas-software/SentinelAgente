@@ -27,6 +27,18 @@ public sealed class SecretFileTests : IDisposable
         Assert.Contains("chmod 600", error.Message);
     }
 
+    [Theory]
+    [InlineData("abc\n123")]
+    [InlineData("abc 123")]
+    [InlineData("abc\t123")]
+    public void Recusa_o_segredo_com_espaco_ou_quebra_de_linha_no_meio(string content)
+    {
+        var path = Write(content, OwnerOnly);
+
+        var error = Assert.Throws<SecretFileException>(() => SecretFile.Read(path));
+        Assert.Contains("uma linha só", error.Message);
+    }
+
     [Fact]
     public void Recusa_o_arquivo_vazio()
     {

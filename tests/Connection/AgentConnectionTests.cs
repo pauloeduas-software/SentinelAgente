@@ -138,6 +138,56 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task O_hwid_recusado_pelo_servidor_avisa_e_espera_o_teto()
+    {
+        _hub = await StartHubAsync();
+        await StartAsync(_hub.Url);
+        var server = await ReadAsync(_hub.Accepted);
+        await ReadAsync(_hub.Received);
+
+        // O SentinelWeb fecha com 1008 o handshake cujo HWID não é o do token.
+        await server.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, "HWID diferente do token", TestContext.Current.CancellationToken);
+
+        Assert.True(await EventuallyAsync(() => _log.Lines.Any(line =>
+            line.Contains("recusou o HWID abc123") && line.Contains(EnrollSecretFile))));
+        Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("Nova tentativa em 00:00:00.2"))));
+    }
+
+    [Fact]
+    public async Task O_segredo_que_sobrou_nao_impede_o_token_gravado()
+    {
+        _hub = await StartHubAsync();
+        _hub.EnrollStatus = 409;
+        WriteSecret(EnrollSecretFile, FakeAgentHub.EnrollSecret);
+
+        var connection = await StartAsync(_hub.Url);
+
+        using var first = JsonDocument.Parse(await ReadAsync(_hub.Received));
+        Assert.Equal("Handshake", first.RootElement.GetProperty("Type").GetString());
+        Assert.True(await EventuallyAsync(() => connection.IsConnected));
+        Assert.Contains(_log.Lines, line => line.Contains("a conexão segue com ele"));
+    }
+
+    [Fact]
+    public async Task Sem_apresentacao_o_servico_para_com_erro_antes_de_conectar()
+    {
+        _hub = await StartHubAsync();
+        try
+        {
+            var connection = await StartAsync(_hub.Url, handshake: new FailingHandshake());
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => connection.ExecuteTask!);
+            Assert.Equal(1, Environment.ExitCode);
+            Assert.False(_hub.Accepted.Reader.TryRead(out _));
+        }
+        finally
+        {
+            // O código de saída é do processo inteiro: o dos testes continua 0.
+            Environment.ExitCode = 0;
+        }
+    }
+
+    [Fact]
     public async Task Manda_ping_quando_fica_parado()
     {
         _hub = await StartHubAsync();
@@ -193,7 +243,8 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     }
 
     private async Task<AgentConnection> StartAsync(
-        Uri url, ConnectionTimings? timings = null, string? token = Token, string? caFile = null)
+        Uri url, ConnectionTimings? timings = null, string? token = Token, string? caFile = null,
+        IHandshakeSource? handshake = null)
     {
         if (token is not null && !File.Exists(TokenFile)) SecretFile.Write(TokenFile, token);
 
@@ -201,7 +252,7 @@ public sealed class AgentConnectionTests : IAsyncLifetime
         {
             Url = url, TokenFile = TokenFile, EnrollSecretFile = EnrollSecretFile, CaFile = caFile,
         });
-        var connection = new AgentConnection(options, new FixedHandshake(), _commands, timings ?? Fast, _log);
+        var connection = new AgentConnection(options, handshake ?? new FixedHandshake(), _commands, timings ?? Fast, _log);
         _started.Add(connection);
         await connection.StartAsync(TestContext.Current.CancellationToken);
         return connection;
@@ -251,6 +302,12 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     {
         public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) =>
             ValueTask.FromResult(new HandshakePayload { Hwid = "abc123", Hostname = "pc-teste", OsVersion = "Ubuntu 24.04" });
+    }
+
+    private sealed class FailingHandshake : IHandshakeSource
+    {
+        public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Nenhum dado do firmware identifica esta máquina.");
     }
 
     private sealed class RecordingCommands : ICommandHandler

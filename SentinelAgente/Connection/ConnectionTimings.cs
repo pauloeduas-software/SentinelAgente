@@ -14,6 +14,12 @@ public sealed record ConnectionTimings
     /// <summary>O teto da espera, e a espera depois de o servidor recusar o token.</summary>
     public TimeSpan BackoffMax { get; init; } = TimeSpan.FromMinutes(5);
 
+    /// <summary>
+    /// Quanto a conexão precisa ficar de pé para zerar a espera: a que cai antes
+    /// conta como falha, e a seguinte espera mais.
+    /// </summary>
+    public TimeSpan StableAfter { get; init; } = TimeSpan.FromMinutes(1);
+
     /// <summary>Quanto o upgrade para WebSocket pode demorar.</summary>
     public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(30);
 

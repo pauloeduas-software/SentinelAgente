@@ -57,6 +57,11 @@ public sealed partial class AgentConnection(
 
         try
         {
+            // A apresentação montada uma vez antes da primeira conexão: a máquina
+            // sem HWID para aqui, com o motivo no journal, e não depois de o
+            // servidor responder (A13).
+            await handshake.CreateAsync(stoppingToken);
+
             while (true)
             {
                 var outcome = await ConnectAndServeAsync(url, stoppingToken);
@@ -69,16 +74,24 @@ public sealed partial class AgentConnection(
                 await Task.Delay(delay, stoppingToken);
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        catch (Exception) when (stoppingToken.IsCancellationRequested)
         {
-            // O serviço está parando.
+            // O serviço está parando: o que caiu junto com a conexão não é falha.
+        }
+        catch (Exception e)
+        {
+            // O host do .NET para com código 0 quando o serviço lança, e o systemd
+            // só reinicia o que sai com erro.
+            LogFatal(e);
+            Environment.ExitCode = 1;
+            throw;
         }
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         // O fechamento educado vai antes de cancelar a recepção: com ele o
-        // SentinelWeb põe a máquina OFFLINE na hora, e não depois de 4 minutos.
+        // SentinelWeb põe a máquina OFFLINE na hora, e não depois de 2 minutos.
         if (_session is { } session) await session.CloseAsync("Agente encerrando", timings.CloseTimeout);
         await base.StopAsync(cancellationToken);
     }
@@ -88,7 +101,13 @@ public sealed partial class AgentConnection(
         // O segredo de instalação presente é o pedido de cadastro: na primeira
         // subida, e quando alguém o põe de novo depois de o token ser revogado.
         if (File.Exists(_options.EnrollSecretFile) && await EnrollAsync(stoppingToken) is { } refused)
-            return refused;
+        {
+            // O segredo que sobrou (não deu para apagar, ou a instalação o pôs de
+            // novo) não tira a máquina do ar: com o token gravado, ela conecta, e
+            // o servidor diz se ele ainda vale.
+            if (!File.Exists(_options.TokenFile)) return refused;
+            LogEnrollSkipped(_options.TokenFile);
+        }
 
         string token;
         try
@@ -139,23 +158,45 @@ public sealed partial class AgentConnection(
             using var sessionEnd = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             var pinger = PingWhenIdleAsync(session, hello.Hwid, sessionEnd.Token);
 
-            var reason = await ReceiveAsync(session, stoppingToken);
-            await sessionEnd.CancelAsync();
-            await pinger;
+            try
+            {
+                var reason = await ReceiveAsync(session, stoppingToken);
+                LogDisconnected(reason);
+            }
+            finally
+            {
+                await sessionEnd.CancelAsync();
+                await pinger;
+            }
 
-            LogDisconnected(reason);
-            return Outcome.Served;
+            // O servidor fecha com 1008 quando o HWID do handshake não é o do
+            // token: a placa ou o firmware mudou depois do cadastro, ou o token veio
+            // numa imagem clonada. Tentar de novo dá no mesmo, e só o recadastro
+            // conserta (A11).
+            if (session.Socket.CloseStatus == WebSocketCloseStatus.PolicyViolation)
+            {
+                LogHwidRefused(hello.Hwid, _options.EnrollSecretFile);
+                return Outcome.Unauthorized;
+            }
+            return Stable(session);
         }
         catch (Exception e) when (!stoppingToken.IsCancellationRequested && e is WebSocketException or ObjectDisposedException)
         {
             LogDisconnected(e.GetBaseException().Message);
-            return _session is null ? Outcome.Failed : Outcome.Served;
+            return _session is null ? Outcome.Failed : Stable(session);
         }
         finally
         {
             _session = null;
         }
     }
+
+    /// <summary>
+    /// A conexão que caiu logo depois do handshake conta como falha: sem isso, o
+    /// proxy que aceita e derruba faria o agente reconectar a cada poucos segundos.
+    /// </summary>
+    private Outcome Stable(Session session) =>
+        session.Age >= timings.StableAfter ? Outcome.Served : Outcome.Failed;
 
     /// <summary>
     /// Troca o segredo de instalação pelo token da máquina, grava o token e apaga
@@ -180,7 +221,16 @@ public sealed partial class AgentConnection(
         switch (result.Outcome)
         {
             case EnrollOutcome.Enrolled:
-                SecretFile.Write(_options.TokenFile, result.Token!);
+                try
+                {
+                    SecretFile.Write(_options.TokenFile, result.Token!);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    // O segredo fica: na próxima volta, o cadastro emite outro token.
+                    LogTokenNotWritten(_options.TokenFile, e.Message);
+                    return Outcome.Failed;
+                }
                 try
                 {
                     // O segredo vale para a frota inteira: guardado aqui, quem
@@ -256,7 +306,7 @@ public sealed partial class AgentConnection(
         {
             await commands.HandleAsync(command, cancellationToken);
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             // O comando que falhou não derruba a conexão.
             LogCommandFailed(e, command.Action, command.CommandId);
@@ -296,12 +346,20 @@ public sealed partial class AgentConnection(
     /// Uma conexão de pé. O WebSocket aceita um envio por vez, e quem envia são
     /// várias funções ao mesmo tempo: o envio passa por uma trava.
     /// </summary>
+    /// <remarks>
+    /// Quem chama desiste só da espera pela trava: cancelar um envio no meio
+    /// aborta o WebSocket inteiro, então o envio em curso vai até o fim da sessão.
+    /// </remarks>
     private sealed class Session(ClientWebSocket socket) : IDisposable
     {
         private readonly SemaphoreSlim _sendLock = new(1, 1);
+        private readonly CancellationTokenSource _lifetime = new();
+        private readonly long _started = Environment.TickCount64;
         private long _lastSent = Environment.TickCount64;
 
         public ClientWebSocket Socket => socket;
+
+        public TimeSpan Age => TimeSpan.FromMilliseconds(Environment.TickCount64 - _started);
 
         public TimeSpan IdleFor => TimeSpan.FromMilliseconds(Environment.TickCount64 - Interlocked.Read(ref _lastSent));
 
@@ -310,7 +368,7 @@ public sealed partial class AgentConnection(
             await _sendLock.WaitAsync(cancellationToken);
             try
             {
-                await socket.SendAsync(message.Json, WebSocketMessageType.Text, endOfMessage: true, cancellationToken);
+                await socket.SendAsync(message.Json, WebSocketMessageType.Text, endOfMessage: true, _lifetime.Token);
                 Interlocked.Exchange(ref _lastSent, Environment.TickCount64);
             }
             finally
@@ -342,7 +400,13 @@ public sealed partial class AgentConnection(
             }
         }
 
-        public void Dispose() => _sendLock.Dispose();
+        // A trava não é descartada: quem ainda espera nela ficaria preso para
+        // sempre, e o SemaphoreSlim sem AvailableWaitHandle não segura recurso.
+        public void Dispose()
+        {
+            _lifetime.Cancel();
+            _lifetime.Dispose();
+        }
     }
 
     [LoggerMessage(LogLevel.Information, "Conectado a {Url} como {Hwid}.")]
@@ -379,6 +443,20 @@ public sealed partial class AgentConnection(
 
     [LoggerMessage(LogLevel.Warning, "O token foi gravado, mas o segredo de instalação continua em {EnrollSecretFile}: {Reason}. Apague-o à mão.")]
     private partial void LogEnrollSecretNotDeleted(string enrollSecretFile, string reason);
+
+    [LoggerMessage(LogLevel.Warning, "O cadastro não deu certo, mas há token em {TokenFile}: a conexão segue com ele.")]
+    private partial void LogEnrollSkipped(string tokenFile);
+
+    [LoggerMessage(LogLevel.Error, "O token veio do servidor, mas não pôde ser gravado em {TokenFile}: {Reason}.")]
+    private partial void LogTokenNotWritten(string tokenFile, string reason);
+
+    [LoggerMessage(LogLevel.Critical, "A conexão parou por um erro que não se conserta tentando de novo.")]
+    private partial void LogFatal(Exception exception);
+
+    [LoggerMessage(LogLevel.Error,
+        "O servidor recusou o HWID {Hwid}: o token desta máquina foi emitido para outro. " +
+        "O hardware mudou ou o token veio de outra máquina; para cadastrar de novo, ponha o segredo de instalação em {EnrollSecretFile}.")]
+    private partial void LogHwidRefused(string hwid, string enrollSecretFile);
 
     [LoggerMessage(LogLevel.Information, "Nova tentativa em {Delay}.")]
     private partial void LogRetrying(TimeSpan delay);
