@@ -9,7 +9,7 @@ namespace SentinelAgente.Telemetry;
 /// hora, com ou sem conexão.
 /// </summary>
 /// <remarks>
-/// Sem conexão, a amostra é descartada (A9): a leitura anterior avança do mesmo
+/// Sem conexão, a amostra é descartada (A17): a leitura anterior avança do mesmo
 /// jeito, e a próxima é a média da última hora, e não de todas desde a queda.
 /// Coletor que falha não derruba o serviço: a parte dele vai zerada, e o motivo,
 /// para o log.

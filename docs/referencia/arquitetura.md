@@ -15,11 +15,11 @@ comando funciona abre `Commands/` e acha tudo, a interface inclusive.
 Três pastas são **base**, e as outras as usam:
 
 ```
-Commands · Identity · Inventory · Software · Buffer · Telemetry · Service   ──▶   Connection · Protocol · Config
+Commands · Identity · Inventory · Software · Telemetry · Service   ──▶   Connection · Protocol · Config
 ```
 
 - `Connection`, `Protocol` e `Config` **não** conhecem nenhuma função: não importam nada de `Commands`,
-  `Identity`, `Inventory`, `Software`, `Buffer`, `Telemetry` nem `Service`.
+  `Identity`, `Inventory`, `Software`, `Telemetry` nem `Service`.
 - Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity`), nunca o
   contrário em ciclo.
 - O `Program.cs` é o único lugar que conhece todas: ele liga as peças.
@@ -43,7 +43,6 @@ SentinelAgente/
 │   ├── Identity/                  # o HWID (A13)
 │   ├── Inventory/                 # o que o handshake leva: nome, sistema, rede, serial, fabricante, RAM (A14)
 │   ├── Software/                  # os programas instalados, pelo dpkg ou rpm (A10)
-│   ├── Buffer/                    # as amostras guardadas enquanto a conexão está fora (A9)
 │   ├── Telemetry/                 # a amostra periódica: um coletor por métrica
 │   │   ├── Cpu/
 │   │   ├── Memory/

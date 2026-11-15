@@ -5,7 +5,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A6–A8 (a A7 superada pela A9, e a A8 em parte pela A10).
+> Decisões neste arquivo: A6–A8 e A17 (a A7 superada pela A9, que a A17 superou, e a A8 em parte pela A10).
 
 ---
 
@@ -58,3 +58,27 @@ A lista de programas era a parte mais pesada do handshake, e ninguém a lia.
 
 **O que fica de fora, declarado:** "quais apps estão rodando" não é isto: é a telemetria de processos
 (`Telemetry/Processes`), que o servidor já recebe.
+
+---
+
+## A17 — Sem buffer offline: a amostra sem conexão é descartada
+
+**Decidido** (2026-11-15): o agente não guarda a amostra que não pôde mandar. Sem conexão, ela é descartada, e a
+próxima vai na hora seguinte. O protocolo não ganha o campo de hora da coleta, e o SentinelWeb não muda.
+
+**Supera:** [A9](./protocolo.md#a9--o-buffer-offline-volta-com-a-hora-da-coleta).
+
+**Por quê:**
+- **O ganho é pequeno com uma amostra por hora**
+  ([A12](./protocolo.md#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)): uma queda de 3 horas
+  perde 3 pontos do gráfico. A queda já aparece como OFFLINE, e a primeira amostra da volta mostra o estado
+  atual, que é o que o painel mais usa.
+- **O dado recuperado dura pouco:** a amostra crua fica 3 dias no servidor.
+- **O custo é dos dois lados:** o campo de hora e a recusa da hora no futuro no SentinelWeb, a fila com
+  limite no agente, e o relógio errado da máquina gravando pontos no lugar errado.
+- **Quem guarda é quem vive da série:** o Telegraf (`metric_buffer_limit`) é um encanamento de métricas, onde
+  cada ponto importa. Aqui a telemetria é o retrato da máquina, de hora em hora.
+
+**Quando volta:** se a telemetria ficar frequente (a cada minuto), se surgir alerta ou relatório que precise da
+série completa, ou se a frota tiver muitas máquinas que passam dias fora da rede. Aí volta como a A9 pedia:
+começa no SentinelWeb, com a hora da coleta.

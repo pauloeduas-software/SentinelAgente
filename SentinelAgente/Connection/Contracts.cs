@@ -32,7 +32,7 @@ public interface IServerLink
     /// <summary>
     /// Manda a mensagem se a conexão está de pé. Devolve <c>false</c> sem
     /// conexão ou quando ela cai no meio do envio: quem chamou decide o que
-    /// fazer com o dado (A9). Só lança quando quem chamou cancela.
+    /// fazer com o dado. Só lança quando quem chamou cancela.
     /// </summary>
     Task<bool> TrySendAsync(OutgoingMessage message, CancellationToken cancellationToken);
 }

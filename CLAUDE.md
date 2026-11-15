@@ -39,8 +39,8 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
   cadastro troca pelo segredo de instalação; o agente apaga o segredo e não se recadastra sozinho (A11).
 - **Nada escondido:** o agente aparece com o próprio nome no `ps` e no `systemctl status`, e para com
   `systemctl stop` (A6).
-- **Buffer offline e lista de programas esperam o SentinelWeb:** o servidor precisa ler a hora da coleta
-  (A9) e guardar os programas (A10) antes de o agente ligar os dois.
+- **Lista de programas espera o SentinelWeb:** o servidor precisa guardar os programas (A10) antes de o
+  agente mandar.
 - **Nunca dado verdadeiro no repositório:** testdata, exemplo e doc são inventados no formato real; nada
   copiado da máquina, da rede ou da conta (MAC, IP, hostname, serial, processos, programas).
 - **Só pt-BR** em log, comentário e docs.
@@ -50,12 +50,13 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
 Decidido; não proponha de novo:
 
 - camuflagem de processo, proteção do binário e o driver de kernel `AssetManager.Shield` (A6);
+- buffer offline da telemetria, enquanto ela for de hora em hora (A17);
 - `LoggedOnUser` no handshake (A8);
 - `Infra/` e `Modules/`, ou `Core`/`Linux`/`Worker` em projetos separados (A2).
 
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A17`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A18`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

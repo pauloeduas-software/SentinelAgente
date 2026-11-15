@@ -15,7 +15,6 @@ SentinelAgente/
 ├── Program.cs
 ├── Config/ · Connection/ · Protocol/          # a base: as funções usam, e elas não conhecem as funções
 ├── Identity/ · Inventory/ · Software/         # quem é a máquina e o que tem instalado
-├── Buffer/                                    # as amostras guardadas sem conexão
 ├── Telemetry/  Cpu · Memory · Disk · Network · Processes · Gpu
 ├── Commands/                                  # desligar, reiniciar, suspender
 └── Service/                                   # a vida do serviço no systemd

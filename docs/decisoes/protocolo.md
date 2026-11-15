@@ -51,6 +51,8 @@ antigo sem o servidor perceber a troca.
 
 ## A9 — O buffer offline volta, com a hora da coleta
 
+> **Superada por [A17](./escopo.md#a17--sem-buffer-offline-a-amostra-sem-conexão-é-descartada):** o buffer não vale o custo com uma amostra por hora; a amostra sem conexão é descartada.
+
 **Decidido** (2026-11-13):
 - Sem conexão, o agente guarda as amostras de telemetria numa fila (`Buffer/`) e manda na reconexão, depois do
   handshake, da mais velha para a mais nova.

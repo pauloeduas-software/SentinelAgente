@@ -110,8 +110,8 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 | `TopProcesses` | lista de `{ Pid, Name, RamMb }` |
 
 - **Uma amostra é uma linha** em `telemetries`, com a hora em que **chegou** ao servidor: o protocolo não tem
-  campo de hora, e por isso o buffer offline espera o servidor
-  ([A9](../decisoes/protocolo.md#a9--o-buffer-offline-volta-com-a-hora-da-coleta)). A amostra crua fica 3
+  campo de hora, e o agente não guarda a amostra que não pôde mandar
+  ([A17](../decisoes/escopo.md#a17--sem-buffer-offline-a-amostra-sem-conexão-é-descartada)). A amostra crua fica 3
   dias; o uso agregado por dia, para sempre.
 - **O intervalo é do agente.** O servidor não impõe nenhum; o agente falso manda a cada 3 segundos, o que dá
   28.800 linhas por máquina por dia. Este agente vai mandar de hora em hora
