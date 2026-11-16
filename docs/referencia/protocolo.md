@@ -183,7 +183,7 @@ confere a cada 60 s.
   máquina já a tenha substituído.
 - **O HWID do handshake diferente do token** o servidor fecha com o código 1008 ("HWID diferente do token")
   ([CU](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/acesso.md#cu--a-conexão-com-o-hwid-de-outra-máquina-fecha-com-1008)):
-  a placa ou o firmware mudou depois do cadastro, ou o token veio de outra máquina. O agente diz isso no log,
+  o arquivo do HWID foi apagado ou trocado depois do cadastro (A20), ou o token veio de outra instalação. O agente diz isso no log,
   espera o teto e não se recadastra sozinho; o recadastro é pôr o segredo de instalação de novo.
 - **Do lado do agente** (`Connection/AgentConnection.cs`): a conexão que cai antes de 1 minuto conta como falha,
   e a espera seguinte dobra. O erro que não se conserta tentando de novo (a máquina sem HWID, o `CaFile`

@@ -172,9 +172,9 @@ public sealed partial class AgentConnection(
             }
 
             // O servidor fecha com 1008 quando o HWID do handshake não é o do
-            // token: a placa ou o firmware mudou depois do cadastro, ou o token veio
-            // numa imagem clonada. Tentar de novo dá no mesmo, e só o recadastro
-            // conserta (A11).
+            // token: o arquivo do HWID foi apagado ou trocado depois do cadastro
+            // (A20), ou o token veio de outra instalação. Tentar de novo dá no
+            // mesmo, e só o recadastro conserta (A11).
             if (session.Socket.CloseStatus == WebSocketCloseStatus.PolicyViolation)
             {
                 LogHwidRefused(hello.Hwid, _options.EnrollSecretFile);
@@ -457,7 +457,7 @@ public sealed partial class AgentConnection(
 
     [LoggerMessage(LogLevel.Error,
         "O servidor recusou o HWID {Hwid}: o token desta máquina foi emitido para outro. " +
-        "O hardware mudou ou o token veio de outra máquina; para cadastrar de novo, ponha o segredo de instalação em {EnrollSecretFile}.")]
+        "O arquivo do HWID foi apagado ou trocado, ou o token veio de outra instalação; para cadastrar de novo, ponha o segredo de instalação em {EnrollSecretFile}.")]
     private partial void LogHwidRefused(string hwid, string enrollSecretFile);
 
     [LoggerMessage(LogLevel.Information, "Nova tentativa em {Delay}.")]
