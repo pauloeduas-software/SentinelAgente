@@ -101,8 +101,8 @@ internal sealed record EnrollRequest(string Hwid);
 
 internal sealed record EnrollResponse(string? Token);
 
-// PascalCase no fio, que é o que o agente falso do SentinelWeb manda; na
-// leitura, sem diferença de maiúscula.
+// PascalCase no fio, a única grafia que o SentinelWeb lê; na leitura, sem
+// diferença de maiúscula.
 [JsonSourceGenerationOptions(
     PropertyNameCaseInsensitive = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]

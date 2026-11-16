@@ -7,10 +7,10 @@ namespace SentinelAgente.Protocol;
 /// </summary>
 /// <remarks>
 /// O HWID, o nome e o sistema vão sempre: sem o sistema, o servidor grava
-/// "desconhecido" e conta uma mudança de hardware. O resto depende de permissão
-/// e de firmware, e campo nulo não vai para o fio. <c>ChassisType</c> e
-/// <c>DiskTotalBytes</c> o agente não manda (A14). Os programas e as placas de
-/// vídeo são os do GLPI Agent (A22): o servidor ainda os descarta.
+/// "desconhecido". O resto depende de permissão e de firmware, e campo nulo não
+/// vai para o fio. <c>ChassisType</c> e <c>DiskTotalBytes</c> o agente não manda
+/// (A14). Os programas e as placas de vídeo são os do GLPI Agent (A22): o
+/// servidor guarda as placas e ainda descarta os programas.
 /// </remarks>
 public sealed record HandshakePayload
 {

@@ -29,7 +29,6 @@ O agente precisa do SentinelWeb de pé. No repositório dele:
 
 ```bash
 bun run dev              # a API sobe na 3001
-bun run agente:falso     # opcional: o protocolo funcionando, para comparar
 ```
 
 O endereço é `ws://localhost:3001/agent-hub`. O segredo de instalação é o `AGENT_ENROLL_SECRET` do `.env` do

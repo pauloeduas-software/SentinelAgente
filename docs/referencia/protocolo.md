@@ -1,9 +1,9 @@
 # O protocolo com o SentinelWeb
 
 > O que o agente manda e recebe pelo `/agent-hub`. **A fonte é o SentinelWeb:** cada seção aponta o arquivo
-> de lá, e se os dois divergirem, vale o servidor e esta página está errada. O agente falso do servidor
-> ([`scripts/agente-falso.ts`](https://github.com/pauloeduas-software/SentinelWeb/blob/main/scripts/agente-falso.ts))
-> fala este protocolo e é o exemplo que funciona.
+> de lá, e se os dois divergirem, vale o servidor e esta página está errada. Os testes do servidor
+> ([`tests/helpers/agente.ts`](https://github.com/pauloeduas-software/SentinelWeb/blob/main/tests/helpers/agente.ts)) falam este protocolo e são o exemplo que
+> funciona.
 
 ---
 
@@ -56,8 +56,8 @@ conexão já aberta só cai quando ele reinicia.
   (`server/modules/agent/helpers/parse-agent-message.helper.ts`).
 - `Payload` é um objeto e leva `Hwid` em toda mensagem; sem ele, a mensagem é descartada. O servidor tira os
   espaços e passa o HWID para minúsculas (`server/modules/endpoint/helpers/hwid.helper.ts`).
-- Os nomes podem vir em PascalCase ou camelCase: o servidor lê os dois (`payload.helper.ts`). O agente falso
-  manda PascalCase.
+- **Os nomes vão em PascalCase**, o envelope e o payload: é a única grafia que o servidor lê (`payload.helper.ts`,
+  [CY](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#cy--o-servidor-lê-o-que-o-sentinelagente-manda-e-só-isso)).
 
 ---
 
@@ -75,29 +75,24 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 | `CpuModel` | a aba Máquina mostra | `/proc/cpuinfo` (`model name`); no ARM, não vai |
 | `MacAddress` | a aba Máquina mostra | `/sys/class/net/<placa>/address` da placa da rota padrão de menor métrica, com o túnel de VPN para trás ([A15](../decisoes/protocolo.md#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo)) |
 | `LocalIp` | a aba Máquina mostra | o IPv4 dessa placa na rede do gateway |
-| `BiosSerial` | sinal `SERIAL` da reconciliação, o de 100 pontos; com o `SystemUuid`, reconhece a máquina reinstalada | `/sys/class/dmi/id/product_serial`, e o `board_serial` quando ele é de fábrica (só root); os dois de fábrica, não vai |
+| `BiosSerial` | a aba Máquina mostra; sinal `SERIAL` da reconciliação, o de 100 pontos; com o `SystemUuid`, reconhece a máquina reinstalada | `/sys/class/dmi/id/product_serial`, e o `board_serial` quando ele é de fábrica (só root); os dois de fábrica, não vai |
 | `SystemUuid` | sinal `UUID` da reconciliação | `/sys/class/dmi/id/product_uuid` (só root); de fábrica, não vai |
-| `Manufacturer` | grava | `/sys/class/dmi/id/sys_vendor`; de fábrica, não vai |
-| `HardwareModel` | grava. **Nunca** `Model` | `/sys/class/dmi/id/product_name`; na Lenovo, sempre o `product_version` |
-| `ChassisType` | grava | **o agente não manda**: o formato (código ou nome) não está fixado no servidor ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)) |
-| `RamTotalBytes` | grava, em bytes | `/proc/meminfo` (`MemTotal`), arredondado para cima em GiB |
-| `DiskTotalBytes` | grava, em bytes | **o agente não manda**: oscila com disco USB, e nenhuma tela mostra ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)) |
-| `InstalledSoftware` | aceita e descarta | lista de `{ Name, Version, Arch, From, Publisher, Category, SizeBytes, InstallDate }`, o `SOFTWARES` do GLPI: o `dpkg-query` e o `rpm -qa`, em ordem de nome (`Software/InstalledSoftware.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
-| `Gpus` | não lê | lista de `{ Name, Manufacturer, Chipset, MemoryBytes, PciSlot, PciId }`, o `VIDEOS` do GLPI: os dispositivos de classe `0x03` do `/sys/bus/pci/devices`, com os nomes do `pci.ids` (`Inventory/GpuInfo.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
+| `Manufacturer` | a aba Máquina mostra | `/sys/class/dmi/id/sys_vendor`; de fábrica, não vai |
+| `HardwareModel` | a aba Máquina mostra. **Nunca** `Model` | `/sys/class/dmi/id/product_name`; na Lenovo, sempre o `product_version` |
+| `RamTotalBytes` | não lê | `/proc/meminfo` (`MemTotal`), arredondado para cima em GiB |
+| `InstalledSoftware` | não lê | lista de `{ Name, Version, Arch, From, Publisher, Category, SizeBytes, InstallDate }`, o `SOFTWARES` do GLPI: o `dpkg-query` e o `rpm -qa`, em ordem de nome (`Software/InstalledSoftware.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
+| `Gpus` | guarda a lista como veio (`endpoints.gpus`), e a aba Máquina mostra o nome e a memória | lista de `{ Name, Manufacturer, Chipset, MemoryBytes, PciSlot, PciId }`, o `VIDEOS` do GLPI: os dispositivos de classe `0x03` do `/sys/bus/pci/devices`, com os nomes do `pci.ids` (`Inventory/GpuInfo.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
 
-- **`MacAddress`, `LocalIp` e `CpuModel` ausentes apagam o valor gravado;** os campos de `BiosSerial` para
-  baixo, não: o que não veio fica como estava (`register-handshake.usecase.ts`).
-- **Os campos de `BiosSerial` para baixo, mais `CpuModel` e `OsVersion`, são comparados a cada handshake** de
-  máquina vinculada a um computador, e a diferença vira uma linha de mudança de hardware (`AssetChange`). A
-  comparação é exata: valor que oscila entre um handshake e outro — um pendrive somado no total de disco —
-  vira mudança falsa.
+- **`MacAddress`, `LocalIp` e `CpuModel` ausentes apagam o valor gravado;** `BiosSerial`, `SystemUuid`,
+  `Manufacturer`, `HardwareModel` e `Gpus`, não: o que não veio fica como estava (`register-handshake.usecase.ts`).
+- **O servidor não compara mais um handshake com o anterior:** a mudança de hardware (`AssetChange`) saiu, com
+  a memória total ([DA](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#da--o-que-o-agente-manda-vai-para-a-aba-máquina-e-o-que-ninguém-lê-sai)).
 - **Do lado do agente** ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)):
   quem monta é o `Inventory/MachineInventory.cs`, relido a cada conexão, na forma que só muda quando a máquina
   muda.
-- `InstalledSoftware` e `LoggedOnUser` o servidor aceita e descarta, e `Gpus` ele nem lê. O usuário logado o
-  agente não manda ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado));
-  os programas e as placas ele já manda, no formato do GLPI, para o dia em que o servidor guardar ([A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)).
-  Nenhum dos dois entra na comparação de hardware.
+- **O que o servidor não lê, ele ignora sem erro:** `RamTotalBytes` e `InstalledSoftware` hoje, e qualquer campo
+  fora da tabela. O usuário logado o agente não manda ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado));
+  os programas ele já manda, no formato do GLPI, para o dia em que o servidor guardar ([A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)).
 
 ---
 
@@ -113,14 +108,12 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 
 - **Uma amostra é uma linha** em `telemetries`, com a hora em que **chegou** ao servidor: o protocolo não tem
   campo de hora, e o agente não guarda a amostra que não pôde mandar
-  ([A17](../decisoes/escopo.md#a17--sem-buffer-offline-a-amostra-sem-conexão-é-descartada)). A amostra crua fica 3
-  dias; o uso agregado por dia, para sempre.
-- **O intervalo é do agente.** O servidor não impõe nenhum; o agente falso manda a cada 3 segundos, o que dá
-  28.800 linhas por máquina por dia. Este agente vai mandar de hora em hora
+  ([A17](../decisoes/escopo.md#a17--sem-buffer-offline-a-amostra-sem-conexão-é-descartada)). Só a última
+  amostra de cada máquina fica: o expurgo diário apaga as outras.
+- **O intervalo é do agente.** O servidor não impõe nenhum. Este agente manda de hora em hora
   ([A12](../decisoes/protocolo.md#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)).
 - Campo ausente vira zero ou lista vazia (`normalize-payload.helper.ts`).
-- **A tela mostra o total de rede pelos bytes.** `TotalRxGb` e `TotalTxGb` ela só lê quando os bytes não
-  vêm (`src/helpers/metrics.helper.ts`).
+- **A tela mostra o total de rede pelos bytes** (`src/helpers/metrics.helper.ts`).
 - **Do lado do agente**
   ([A16](../decisoes/protocolo.md#a16--a-telemetria-a-média-desde-a-amostra-anterior-o-disco-como-o-df-a-rede-só-pela-placa-física)):
   o `Telemetry/TelemetryService.cs` manda a primeira amostra quando a conexão sobe e depois uma por hora; sem
