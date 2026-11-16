@@ -22,6 +22,25 @@ public sealed class MessagesTests
     }
 
     [Fact]
+    public void Os_programas_e_as_placas_vao_com_os_nomes_do_glpi()
+    {
+        var message = Messages.CreateHandshake(new HandshakePayload
+        {
+            Hwid = "abc123",
+            Hostname = "pc-01",
+            OsVersion = "Fedora Linux 41",
+            InstalledSoftware = [new SoftwarePayload("bash", "5.2.32-1.fc41", "x86_64", "rpm", "Fedora Project", null, 8_460_279, new DateOnly(2024, 11, 13))],
+            Gpus = [new GpuPayload("GeForce MX150", "NVIDIA Corporation", "GP108M", null, "01:00.0", "10de:1d10")],
+        });
+
+        Assert.Equal(
+            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Fedora Linux 41",""" +
+            """ "InstalledSoftware":[{"Name":"bash","Version":"5.2.32-1.fc41","Arch":"x86_64","From":"rpm","Publisher":"Fedora Project","SizeBytes":8460279,"InstallDate":"2024-11-13"}],""".TrimStart() +
+            """ "Gpus":[{"Name":"GeForce MX150","Manufacturer":"NVIDIA Corporation","Chipset":"GP108M","PciSlot":"01:00.0","PciId":"10de:1d10"}]}}""".TrimStart(),
+            Encoding.UTF8.GetString(message.Json.Span));
+    }
+
+    [Fact]
     public void A_telemetria_vai_com_os_nomes_do_servidor()
     {
         var message = Messages.CreateTelemetry(new TelemetryPayload

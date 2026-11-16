@@ -82,6 +82,8 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 | `ChassisType` | grava | **o agente não manda**: o formato (código ou nome) não está fixado no servidor ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)) |
 | `RamTotalBytes` | grava, em bytes | `/proc/meminfo` (`MemTotal`), arredondado para cima em GiB |
 | `DiskTotalBytes` | grava, em bytes | **o agente não manda**: oscila com disco USB, e nenhuma tela mostra ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)) |
+| `InstalledSoftware` | aceita e descarta | lista de `{ Name, Version, Arch, From, Publisher, Category, SizeBytes, InstallDate }`, o `SOFTWARES` do GLPI: o `dpkg-query` e o `rpm -qa`, em ordem de nome (`Software/InstalledSoftware.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
+| `Gpus` | não lê | lista de `{ Name, Manufacturer, Chipset, MemoryBytes, PciSlot, PciId }`, o `VIDEOS` do GLPI: os dispositivos de classe `0x03` do `/sys/bus/pci/devices`, com os nomes do `pci.ids` (`Inventory/GpuInfo.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
 
 - **`MacAddress`, `LocalIp` e `CpuModel` ausentes apagam o valor gravado;** os campos de `BiosSerial` para
   baixo, não: o que não veio fica como estava (`register-handshake.usecase.ts`).
@@ -92,10 +94,10 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 - **Do lado do agente** ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)):
   quem monta é o `Inventory/MachineInventory.cs`, relido a cada conexão, na forma que só muda quando a máquina
   muda.
-- `InstalledSoftware` e `LoggedOnUser` o servidor aceita e descarta. O usuário logado o agente não manda
-  ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado)); os
-  programas, só depois que o servidor passar a guardar
-  ([A10](../decisoes/protocolo.md#a10--a-lista-de-programas-instalados-volta)).
+- `InstalledSoftware` e `LoggedOnUser` o servidor aceita e descarta, e `Gpus` ele nem lê. O usuário logado o
+  agente não manda ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado));
+  os programas e as placas ele já manda, no formato do GLPI, para o dia em que o servidor guardar ([A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)).
+  Nenhum dos dois entra na comparação de hardware.
 
 ---
 
@@ -139,8 +141,7 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 - **O envio que não chegou não para nada:** a conexão que cai no meio do envio devolve `false` ao
   `IServerLink.TrySendAsync`, e a amostra é descartada como sem conexão.
 
-- **GPU o servidor não recebe hoje.** Não há campo no protocolo, coluna no banco nem lugar na tela: começa
-  no SentinelWeb.
+- **O uso da GPU não vai.** As placas de vídeo vão no handshake, como inventário ([A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)).
 
 ## Ping
 

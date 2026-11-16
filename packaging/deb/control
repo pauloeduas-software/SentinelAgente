@@ -4,6 +4,7 @@ Architecture: @ARCH@
 Maintainer: @MAINTAINER@
 Installed-Size: @SIZE@
 Depends: dotnet-runtime-10.0, systemd
+Recommends: pci.ids
 Section: admin
 Priority: optional
 Homepage: https://github.com/pauloeduas-software/SentinelAgente

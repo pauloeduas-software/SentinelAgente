@@ -40,8 +40,8 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
   cadastro troca pelo segredo de instalação; o agente apaga o segredo e não se recadastra sozinho (A11).
 - **Nada escondido:** o agente aparece com o próprio nome no `ps` e no `systemctl status`, e para com
   `systemctl stop` (A6).
-- **Lista de programas espera o SentinelWeb:** o servidor precisa guardar os programas (A10) antes de o
-  agente mandar.
+- **Programas e placas de vídeo como o GLPI:** vão no handshake (`InstalledSoftware`, `Gpus`) antes de o
+  SentinelWeb guardar, que ignora o campo que não conhece; o uso da GPU não entra (A22).
 - **Nunca dado verdadeiro no repositório:** testdata, exemplo e doc são inventados no formato real; nada
   copiado da máquina, da rede ou da conta (MAC, IP, hostname, serial, processos, programas).
 - **Só pt-BR** em log, comentário e docs.
@@ -58,6 +58,6 @@ Decidido; não proponha de novo:
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A22`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A23`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

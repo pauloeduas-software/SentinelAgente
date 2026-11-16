@@ -1,0 +1,28 @@
+#
+#	List of PCI ID's
+#
+#	Version: 2024.11.01
+#	Date:    2024-11-01 03:15:02
+#
+# Syntax:
+# vendor  vendor_name
+#	device  device_name				<-- single tab
+#		subvendor subdevice  subsystem_name	<-- two tabs
+
+0e11  Compaq Computer Corporation
+	0001  PCI to EISA Bridge
+1002  Advanced Micro Devices, Inc. [AMD/ATI]
+	73df  Navi 22 [Radeon RX 6700/6700 XT/6750 XT / 6800M/6850M XT]
+		1043 05c7  Radeon RX 6700 XT
+	ab28  Navi 21/23 HDMI/DP Audio Controller
+10de  NVIDIA Corporation
+	1d10  GP108M [GeForce MX150]
+		17aa 225e  ThinkPad T480
+8086  Intel Corporation
+	5917  UHD Graphics 620
+		17aa 225d  ThinkPad T480
+	9d71  Sunrise Point-LP HD Audio
+C 00  Unclassified device
+	00  Non-VGA unclassified device
+C 03  Display controller
+	00  VGA compatible controller

@@ -2,7 +2,7 @@
 > **O agente do SentinelWeb: inventário, telemetria e comando nas máquinas Linux**
 
 O **SentinelAgente** roda como serviço em cada computador, conecta no `/agent-hub` do
-[SentinelWeb](https://github.com/pauloeduas-software/SentinelWeb), apresenta a máquina, manda o uso de CPU,
+[SentinelWeb](https://github.com/pauloeduas-software/SentinelWeb), apresenta a máquina, com os programas instalados e as placas de vídeo, manda o uso de CPU,
 memória, disco, rede e processos de hora em hora e executa os comandos que a tela oferece:
 desligar, reiniciar e suspender.
 
@@ -15,7 +15,7 @@ SentinelAgente/
 ├── Program.cs
 ├── Config/ · Connection/ · Protocol/          # a base: as funções usam, e elas não conhecem as funções
 ├── Identity/ · Inventory/ · Software/         # quem é a máquina e o que tem instalado
-├── Telemetry/  Cpu · Memory · Disk · Network · Processes · Gpu
+├── Telemetry/  Cpu · Memory · Disk · Network · Processes
 └── Commands/                                  # desligar, reiniciar, suspender
 tests/                                         # as mesmas pastas, com testdata/
 packaging/                                     # o pacote .deb
@@ -29,6 +29,7 @@ Leia antes de criar arquivo novo.
 A conexão com o SentinelWeb está pronta (`Config/`, `Protocol/` e `Connection/`): endereço na configuração,
 `wss://`, um token por máquina, que o cadastro troca pelo segredo de instalação, e reconexão. Ela entra no
 `Program.cs` junto com o `Identity/` e o `Inventory/`, que montam o handshake, a `Telemetry/` e os
-`Commands/`. Ainda vazias: `Software/` (espera a A10) e `Telemetry/Gpu/`. O contrato que o código precisa cumprir está em
+`Commands/`. Os programas (`Software/`) e as placas de vídeo vão no handshake no formato do GLPI, antes de o
+SentinelWeb guardar (A22). O contrato que o código precisa cumprir está em
 [`docs/referencia/protocolo.md`](./docs/referencia/protocolo.md), e o ambiente, em
 [`docs/guias/preparar-o-ambiente.md`](./docs/guias/preparar-o-ambiente.md).

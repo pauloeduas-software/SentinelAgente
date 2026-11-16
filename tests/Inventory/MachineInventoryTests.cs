@@ -241,6 +241,29 @@ public sealed class MachineInventoryTests : IDisposable
         Assert.False(File.Exists(_hwidFile));
     }
 
+    [Fact]
+    public async Task A_lista_de_programas_entra_no_handshake_a_cada_conexao()
+    {
+        var reads = 0;
+        var inventory = new MachineInventory(Machine("notebook-dell"), _ => [], _hwidFile, _ =>
+        {
+            reads++;
+            return Task.FromResult<IReadOnlyList<SoftwarePayload>?>([new SoftwarePayload("bash", "5.2.21-2ubuntu4", "amd64", "deb")]);
+        });
+
+        await inventory.CreateAsync(TestContext.Current.CancellationToken);
+        var payload = await inventory.CreateAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("bash", Assert.Single(payload.InstalledSoftware!).Name);
+        Assert.Equal(2, reads);
+    }
+
+    [Fact]
+    public void As_placas_de_video_entram_no_handshake()
+    {
+        Assert.Equal(["UHD Graphics 620", "GeForce MX150"], Read(Machine("thinkpad")).Gpus!.Select(gpu => gpu.Name));
+    }
+
     private void Write(string relative, string content)
     {
         var path = Path.Combine(_directory, relative);

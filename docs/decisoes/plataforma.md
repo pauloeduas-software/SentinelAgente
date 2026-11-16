@@ -39,6 +39,9 @@ o que se pede do agente: serviço do systemd, `/proc` e `/sys`, WebSocket e os c
 
 > **Superada em parte por [A21](#a21--a-pasta-service-sai-a-vida-do-serviço-é-do-addsystemd):**
 > a pasta `Service` sai; a vida do serviço fica no `AddSystemd()` do `Program.cs`.
+>
+> **Superada em parte por [A22](./protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
+> a pasta `Telemetry/Gpu` sai; as placas de vídeo são lidas no `Inventory`.
 
 **Decidido** (2026-11-13): um projeto (`SentinelAgente/`, na raiz do repositório, sem `src/`) com uma pasta por função direto na raiz dele —
 `Config`, `Connection`, `Protocol`, `Identity`, `Inventory`, `Telemetry`, `Commands` e `Service` —, e dentro de

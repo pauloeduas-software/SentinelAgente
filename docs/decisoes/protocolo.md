@@ -6,7 +6,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15, A16 e A20.
+> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15, A16, A20 e A22.
 
 ---
 
@@ -78,6 +78,9 @@ disco). O antigo guardava 10 amostras em memória, a cada 30 s: cinco minutos.
 ---
 
 ## A10 — A lista de programas instalados volta
+
+> **Superada em parte por [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
+> o agente manda a lista no handshake sem esperar o servidor guardar.
 
 **Decidido** (2026-11-13): o agente volta a mandar os programas instalados (`Software/`), lidos do gerenciador
 de pacotes — `dpkg-query` no Debian e Ubuntu, `rpm` no Fedora e Red Hat —, com nome e versão. O usuário logado
@@ -358,6 +361,9 @@ eles que a máquina sai.
 
 ## A16 — A telemetria: a média desde a amostra anterior, o disco como o `df`, a rede só pela placa física
 
+> **Superada em parte por [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
+> a GPU vai no handshake, como inventário; o uso dela continua fora.
+
 **Decidido** (2026-11-15), com o Telegraf, o gopsutil e o Tactical RMM como base. Cada número da amostra de hora em
 hora ([A12](#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)) quer dizer isto:
 
@@ -450,3 +456,55 @@ vista: a lista de fábrica e os valores repetidos em várias máquinas, que o ag
 - **O disco clonado com o agente instalado** leva o HWID e o token juntos: as duas máquinas disputam a mesma conexão.
   O GLPI Agent também não o detecta. Quem monta imagem apaga `/var/lib/sentinel-agent` antes de gerá-la.
 
+
+---
+
+## A22 — Os programas e as placas de vídeo vão no handshake, como no GLPI, antes de o SentinelWeb guardar
+
+**Decidido** (2026-11-15): o handshake leva duas listas do inventário do GLPI Agent, lidas a cada conexão:
+
+- **`InstalledSoftware`**, o `SOFTWARES` do GLPI: o `dpkg-query` e o `rpm -qa` (`Software/`), os dois que estiverem
+  na máquina, com os campos de `Generic/Softwares/Deb.pm` e `RPM.pm`.
+
+  | Campo | dpkg | rpm |
+  |---|---|---|
+  | `Name`, `Version`, `Arch` | `Package`, `Version`, `Architecture` | `NAME`, `VERSION-RELEASE`, `ARCH` |
+  | `From` | `deb` | `rpm` |
+  | `Publisher` | não vai | `VENDOR` |
+  | `Category` | `Section` | `GROUP`, sem o `Unspecified` do Fedora |
+  | `SizeBytes` | `Installed-Size` × 1024 | `SIZE` |
+  | `InstallDate` | não vai (o dpkg não guarda) | `INSTALLTIME`, o dia no fuso da máquina |
+
+  Do dpkg só vai o que está instalado de fato (o status que termina em ` installed`); do rpm, o `gpg-pubkey` fica de
+  fora. A lista vai em ordem de nome, e sem gerenciador nenhum, não vai.
+- **`Gpus`**, o `VIDEOS` do GLPI (`Generic/PCI/Videos.pm`): os dispositivos PCI de classe `0x03` do
+  `/sys/bus/pci/devices` (`Inventory/GpuInfo.cs`), na ordem do slot, com `Name`, `Manufacturer`, `Chipset`,
+  `MemoryBytes`, `PciSlot` e `PciId`. O nome e o chip saem do `pci.ids`, divididos no colchete como o GLPI faz
+  ("Navi 22 [Radeon RX 6700 XT]"); sem o arquivo, o nome é o `PciId`. O `.deb` recomenda o pacote `pci.ids`.
+
+**Supera em parte:** [A10](#a10--a-lista-de-programas-instalados-volta) (esperar o servidor guardar para mandar), a
+[A16](#a16--a-telemetria-a-média-desde-a-amostra-anterior-o-disco-como-o-df-a-rede-só-pela-placa-física) (a GPU
+fora) e a [A2](./plataforma.md#a2--um-projeto-com-uma-pasta-por-função) (a pasta `Telemetry/Gpu/`).
+
+**Por quê:** o agente fecha antes do servidor, e o servidor já ignora o que não conhece: o `InstalledSoftware` ele
+lê e descarta (`normalize-payload.helper.ts`), e o `Gpus` nem lê. Nenhum dos dois entra na comparação de hardware
+(`hardware-diff.helper.ts`), então mandar agora não gera mudança falsa. Quando o SentinelWeb guardar, o dado já está
+chegando, no formato do GLPI, que é o modelo do inventário de lá. A GPU vai como inventário, e não como uso: o GLPI
+não mede uso, e numa máquina de escritório ele fica perto de zero.
+
+**Descartado:**
+- **O uso da GPU na telemetria**, que era o plano da pasta `Telemetry/Gpu/`: cada fabricante pede um caminho (o
+  `gpu_busy_percent` da AMD, o `nvidia-smi` do driver fechado, o `perf` da Intel), para um número que diz pouco de
+  hora em hora.
+- **A distribuição como editor de todo pacote deb**, que é o que o GLPI faz (`lsb_release -i`): o Chrome sairia como
+  "Ubuntu".
+- **A memória pela janela do PCI**, que é o que o GLPI manda: dá 256 MB numa placa de 8 GB. Vai a VRAM do `amdgpu`
+  (`mem_info_vram_total`); a NVIDIA e a Intel vão sem memória.
+- **Uma mensagem própria para os programas.** A A10 deixava em aberto; o servidor lê o campo no handshake, e o GLPI
+  manda os programas no inventário, junto com o resto.
+
+**O que fica de fora, declarado:**
+- **Snap, Flatpak e AppImage**, que o GLPI lê em módulos à parte: só o que o dpkg e o rpm conhecem.
+- **A resolução da tela**, que o GLPI tira do `xrandr`: o serviço não tem tela.
+- **Os nomes ficam no fio até o SentinelWeb fixar os dele.** Se lá o campo nascer com outro nome, o
+  `Protocol/HandshakePayload.cs` muda junto.

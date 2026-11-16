@@ -1,0 +1,5 @@
+vim-enhanced	x86_64	9.1.825-1.fc41	1731672000	4210331	Fedora Project	Unspecified
+gpg-pubkey	(none)	e99d6ad1-64d2612c	1731585600	0	(none)	Public Keys
+bash	x86_64	5.2.32-1.fc41	1731499200	8460279	Fedora Project	System Environment/Shells
+google-chrome-stable	x86_64	131.0.6778.69-1	1731758400	367113584	Google Inc.	Applications/Internet
+pacote-local	noarch	1.0-1	1731672000	2048	(none)	(none)
