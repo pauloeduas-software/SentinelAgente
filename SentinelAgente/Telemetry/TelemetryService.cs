@@ -32,7 +32,7 @@ internal sealed partial class TelemetryService(
             // O HWID com que a conexão se apresentou: a amostra vai com o mesmo.
             var id = hwid();
 
-            // A leitura de partida: CPU e rede precisam de uma anterior para a média.
+            // A leitura de partida: a CPU precisa de uma anterior para a média.
             Collect();
             await Task.Delay(timings.FirstWindow, stoppingToken);
 

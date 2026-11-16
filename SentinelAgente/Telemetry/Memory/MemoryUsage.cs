@@ -9,8 +9,8 @@ namespace SentinelAgente.Telemetry.Memory;
 /// como usado (A16).
 /// </summary>
 /// <remarks>
-/// O total aqui não se arredonda, como o do handshake: é a base da porcentagem
-/// usada, e não entra na comparação de hardware.
+/// O total vai cru, sem arredondar: é a base da porcentagem usada. O handshake
+/// não leva a RAM (A24).
 /// </remarks>
 internal sealed class MemoryUsage(SystemRoot root) : ITelemetryCollector
 {

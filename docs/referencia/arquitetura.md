@@ -15,12 +15,12 @@ comando funciona abre `Commands/` e acha tudo, a interface inclusive.
 Três pastas são **base**, e as outras as usam:
 
 ```
-Commands · Identity · Inventory · Software · Telemetry   ──▶   Connection · Protocol · Config
+Commands · Identity · Inventory · Telemetry   ──▶   Connection · Protocol · Config
 ```
 
 - `Connection`, `Protocol` e `Config` **não** conhecem nenhuma função: não importam nada de `Commands`,
-  `Identity`, `Inventory`, `Software` nem `Telemetry`.
-- Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity` e os programas do `Software`, e a `Telemetry` o HWID que o `Inventory` leu), nunca o
+  `Identity`, `Inventory` nem `Telemetry`.
+- Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity`, e a `Telemetry` o HWID que o `Inventory` leu), nunca o
   contrário em ciclo.
 - O `Program.cs` é o único lugar que conhece todas: ele liga as peças.
 
@@ -41,14 +41,11 @@ SentinelAgente/
 │   ├── Connection/                # BASE. o WebSocket com o /agent-hub: token, handshake a cada conexão, reconexão
 │   ├── Protocol/                  # BASE. o envelope e as mensagens, espelho do agent-protocol.types.ts
 │   ├── Identity/                  # o HWID, sorteado na instalação (A20)
-│   ├── Inventory/                 # o que o handshake leva: nome, sistema, rede, serial, fabricante, RAM, placas de vídeo (A14, A22)
-│   ├── Software/                  # os programas instalados, pelo dpkg e o rpm, que o Inventory põe no handshake (A22)
+│   ├── Inventory/                 # o que o handshake leva: nome, sistema, rede, serial, fabricante, placas de vídeo (A14, A22, A24)
 │   ├── Telemetry/                 # a amostra periódica: um coletor por métrica
 │   │   ├── Cpu/
 │   │   ├── Memory/
-│   │   ├── Disk/
-│   │   ├── Network/
-│   │   └── Processes/             # quais programas estão rodando
+│   │   └── Disk/
 │   └── Commands/                  # a lista fechada de ações e quem roda o systemctl (A5, A18)
 ├── tests/                         # as mesmas pastas do agente
 │   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
@@ -59,7 +56,7 @@ SentinelAgente/
 ### Dentro de `Telemetry/`
 
 Cada métrica é uma pasta com o seu coletor, e todos entregam a sua parte da mesma amostra. Métrica nova é
-pasta nova, sem mexer nas outras — é como o Telegraf cresce (`plugins/inputs/cpu`, `mem`, `disk`, `net`).
+pasta nova, sem mexer nas outras — é como o Telegraf cresce (`plugins/inputs/cpu`, `mem`, `disk`).
 Cada coletor implementa o `ITelemetryCollector`, preenche a sua parte do `TelemetrySample` e entra no
 `TelemetryRegistration`; quem marca a hora e manda é o `TelemetryService`. Os coletores leem `/proc` e `/sys`
 pelo `SystemRoot` do `Inventory`.
@@ -67,7 +64,7 @@ pelo `SystemRoot` do `Inventory`.
 ### Onde mora o que é do Linux
 
 Na pasta da função que precisa dele: quem lê `/proc/stat` é o coletor de `Cpu/`, quem chama `systemctl`
-é o `Commands/`, e quem chama `dpkg-query` e `rpm` é o `Software/`. O agente é só Linux (a especificação de requisitos diz isso), então não há camada que
+é o `Commands/`. O agente é só Linux (a especificação de requisitos diz isso), então não há camada que
 esconda o sistema operacional. Se o Windows vier, cada função ganha a sua versão ao lado da do Linux.
 
 ### Testes

@@ -41,8 +41,8 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
   cadastro troca pelo segredo de instalação; o agente apaga o segredo e não se recadastra sozinho (A11).
 - **Nada escondido:** o agente aparece com o próprio nome no `ps` e no `systemctl status`, e para com
   `systemctl stop` (A6).
-- **Programas e placas de vídeo como o GLPI:** vão no handshake (`InstalledSoftware`, `Gpus`) antes de o
-  SentinelWeb guardar, que ignora o campo que não conhece; o uso da GPU não entra (A22).
+- **Só vai o que o SentinelWeb lê:** programas, rede e processos não vão, e as placas de vídeo levam o nome e a
+  memória; volta quando o servidor guardar e mostrar (A24).
 - **Nunca dado verdadeiro no repositório:** testdata, exemplo e doc são inventados no formato real; nada
   copiado da máquina, da rede ou da conta (MAC, IP, hostname, serial, processos, programas).
 - **Só pt-BR** em log, comentário e docs.
@@ -55,11 +55,12 @@ Decidido; não proponha de novo:
 - buffer offline da telemetria, enquanto ela for de hora em hora (A17);
 - `LoggedOnUser` no handshake (A8);
 - comandos de terminal e ações novas além das três de energia (A23);
+- `InstalledSoftware`, `Network` e `TopProcesses` antes de o SentinelWeb guardar e mostrar (A24);
 - `Infra/` e `Modules/`, ou `Core`/`Linux`/`Worker` em projetos separados (A2).
 
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A24`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A25`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

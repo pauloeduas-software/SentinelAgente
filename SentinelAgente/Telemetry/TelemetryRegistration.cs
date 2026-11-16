@@ -3,8 +3,6 @@ using SentinelAgente.Inventory;
 using SentinelAgente.Telemetry.Cpu;
 using SentinelAgente.Telemetry.Disk;
 using SentinelAgente.Telemetry.Memory;
-using SentinelAgente.Telemetry.Network;
-using SentinelAgente.Telemetry.Processes;
 
 namespace SentinelAgente.Telemetry;
 
@@ -23,8 +21,6 @@ public static class TelemetryRegistration
         services.AddSingleton<ITelemetryCollector>(new CpuUsage(root));
         services.AddSingleton<ITelemetryCollector>(new MemoryUsage(root));
         services.AddSingleton<ITelemetryCollector>(new DiskUsage(root, new DriveStats()));
-        services.AddSingleton<ITelemetryCollector>(new NetworkUsage(root, TimeProvider.System));
-        services.AddSingleton<ITelemetryCollector>(new TopProcesses(root));
 
         services.AddHostedService(provider => new TelemetryService(
             provider.GetRequiredService<IServerLink>(),

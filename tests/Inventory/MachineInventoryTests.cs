@@ -6,8 +6,6 @@ namespace SentinelAgente.Tests.Inventory;
 
 public sealed class MachineInventoryTests : IDisposable
 {
-    private const long GiB = 1024L * 1024 * 1024;
-
     // O HWID inventado, gravado antes de cada teste: ele não sai do firmware (A20).
     private const string TestHwid = "7d3a1c20-5b4e-4f61-9a2b-1c0d9e8f7a99";
 
@@ -53,7 +51,6 @@ public sealed class MachineInventoryTests : IDisposable
             SystemUuid = "4c4c4544-0034-4310-8030-b4c04f4b5032",
             Manufacturer = "Dell Inc.",
             HardwareModel = "Latitude 5410",
-            RamTotalBytes = 16 * GiB,
         }, Read(Machine("notebook-dell")));
     }
 
@@ -172,13 +169,6 @@ public sealed class MachineInventoryTests : IDisposable
     }
 
     [Fact]
-    public void A_ram_e_arredondada_para_cima_em_gib()
-    {
-        // MemTotal de 7.972.384 kB, uns 7,6 GiB.
-        Assert.Equal(8 * GiB, Read(Machine("thinkpad")).RamTotalBytes);
-    }
-
-    [Fact]
     public void A_bridge_serve_quando_e_a_unica_rota()
     {
         var payload = Read(Machine("servidor-kvm"));
@@ -211,7 +201,6 @@ public sealed class MachineInventoryTests : IDisposable
         Assert.Null(payload.MacAddress);
         Assert.Null(payload.LocalIp);
         Assert.Null(payload.CpuModel);
-        Assert.Null(payload.RamTotalBytes);
     }
 
     [Fact]
@@ -239,23 +228,6 @@ public sealed class MachineInventoryTests : IDisposable
 
         Assert.Equal(handshake.Hwid, inventory.Hwid);
         Assert.False(File.Exists(_hwidFile));
-    }
-
-    [Fact]
-    public async Task A_lista_de_programas_entra_no_handshake_a_cada_conexao()
-    {
-        var reads = 0;
-        var inventory = new MachineInventory(Machine("notebook-dell"), _ => [], _hwidFile, _ =>
-        {
-            reads++;
-            return Task.FromResult<IReadOnlyList<SoftwarePayload>?>([new SoftwarePayload("bash", "5.2.21-2ubuntu4", "amd64", "deb")]);
-        });
-
-        await inventory.CreateAsync(TestContext.Current.CancellationToken);
-        var payload = await inventory.CreateAsync(TestContext.Current.CancellationToken);
-
-        Assert.Equal("bash", Assert.Single(payload.InstalledSoftware!).Name);
-        Assert.Equal(2, reads);
     }
 
     [Fact]

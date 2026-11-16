@@ -79,6 +79,8 @@ disco). O antigo guardava 10 amostras em memória, a cada 30 s: cinco minutos.
 
 ## A10 — A lista de programas instalados volta
 
+> **Superada por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** a lista de programas sai de novo, até o SentinelWeb guardar e mostrar.
+
 > **Superada em parte por [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
 > o agente manda a lista no handshake sem esperar o servidor guardar.
 
@@ -261,6 +263,8 @@ então esta é a hora de fechar a conta.
 
 ## A14 — O inventário: o que fica estável vai, o que oscila ou não tem formato espera
 
+> **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `RamTotalBytes` sai do handshake; a RAM vai só na telemetria.
+
 **Decidido** (2026-11-15): o handshake leva a ficha da máquina, relida a cada conexão
 (`Inventory/MachineInventory.cs`), com estas regras:
 
@@ -360,6 +364,8 @@ eles que a máquina sai.
 ---
 
 ## A16 — A telemetria: a média desde a amostra anterior, o disco como o `df`, a rede só pela placa física
+
+> **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `Network` e o `TopProcesses` saem da telemetria.
 
 > **Superada em parte por [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
 > a GPU vai no handshake, como inventário; o uso dela continua fora.
@@ -461,6 +467,8 @@ vista: a lista de fábrica e os valores repetidos em várias máquinas, que o ag
 
 ## A22 — Os programas e as placas de vídeo vão no handshake, como no GLPI, antes de o SentinelWeb guardar
 
+> **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `InstalledSoftware` sai, e o `Gpus` fica só com `Name` e `MemoryBytes`.
+
 **Decidido** (2026-11-15): o handshake leva duas listas do inventário do GLPI Agent, lidas a cada conexão:
 
 - **`InstalledSoftware`**, o `SOFTWARES` do GLPI: o `dpkg-query` e o `rpm -qa` (`Software/`), os dois que estiverem
@@ -508,3 +516,37 @@ não mede uso, e numa máquina de escritório ele fica perto de zero.
 - **A resolução da tela**, que o GLPI tira do `xrandr`: o serviço não tem tela.
 - **Os nomes ficam no fio até o SentinelWeb fixar os dele.** Se lá o campo nascer com outro nome, o
   `Protocol/HandshakePayload.cs` muda junto.
+
+---
+
+## A24 — O agente manda só o que o SentinelWeb lê: os programas, a rede e os processos saem
+
+**Decidido** (2026-11-15): o que o servidor não guarda, ou guarda sem uso, sai do fio enquanto o sistema é pequeno.
+
+| Sai | Onde estava | Por quê |
+|---|---|---|
+| `InstalledSoftware` | handshake (`Software/`) | o servidor lê e descarta; era a parte mais pesada do handshake, com milhares de pacotes |
+| `RamTotalBytes` | handshake (`Inventory/MemInfo.cs`) | o servidor não lê; a telemetria já leva a RAM total |
+| `Gpus`: `Manufacturer`, `Chipset`, `PciSlot`, `PciId` | handshake | a aba Máquina mostra só o nome e a memória |
+| `Network` | telemetria (`Telemetry/Network/`) | com uma amostra por hora, a velocidade é a média de uma hora inteira e não diz nada; os contadores desde o boot, ninguém lê |
+| `TopProcesses` | telemetria (`Telemetry/Processes/`) | uma foto por hora não pega o momento da lentidão, só a última fica no servidor, e a lista mostra o que o usuário roda |
+
+Fica: a identidade e o inventário (`Hwid`, `Hostname`, `OsVersion`, `CpuModel`, `MacAddress`, `LocalIp`, `BiosSerial`,
+`SystemUuid`, `Manufacturer`, `HardwareModel` e `Gpus` com `Name` e `MemoryBytes`), a CPU, a RAM e os discos da
+telemetria, o `Ping` e os três comandos.
+
+**Supera:** [A10](#a10--a-lista-de-programas-instalados-volta) e, em parte, a
+[A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera), a
+[A16](#a16--a-telemetria-a-média-desde-a-amostra-anterior-o-disco-como-o-df-a-rede-só-pela-placa-física) e a
+[A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar).
+
+**Por quê:** cada campo é código, testdata e uma regra para manter, e mandar "para o dia em que o servidor guardar"
+(a A22) é pagar agora por um dia que não tem data. Programas, rede e processos têm uso na indústria (licença e
+vulnerabilidade, tráfego, lentidão), mas o uso pede o que o sistema ainda não tem: uma tela que guarde os
+programas, e uma amostra de minuto em minuto para a rede e os processos.
+
+**O que fica de fora, declarado:**
+- **A tela do SentinelWeb** mostra rede zerada e a lista de processos vazia, o que o servidor grava para o campo
+  ausente, até sair de lá também.
+- **A volta começa no SentinelWeb:** o servidor guarda e mostra, e o agente passa a mandar. O código que saiu está
+  no `git log`, no formato do GLPI.

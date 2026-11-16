@@ -9,8 +9,6 @@ public sealed class TelemetrySample
     public long RamTotalBytes { get; set; }
     public long RamUsedBytes { get; set; }
     public IReadOnlyList<DiskPayload> Disks { get; set; } = [];
-    public NetworkPayload? Network { get; set; }
-    public IReadOnlyList<ProcessPayload> TopProcesses { get; set; } = [];
 
     public TelemetryPayload ToPayload(string hwid) => new()
     {
@@ -19,7 +17,5 @@ public sealed class TelemetrySample
         RamTotalBytes = RamTotalBytes,
         RamUsedBytes = RamUsedBytes,
         Disks = Disks,
-        Network = Network,
-        TopProcesses = TopProcesses,
     };
 }

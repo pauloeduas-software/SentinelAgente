@@ -79,9 +79,7 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 | `SystemUuid` | sinal `UUID` da reconciliação | `/sys/class/dmi/id/product_uuid` (só root); de fábrica, não vai |
 | `Manufacturer` | a aba Máquina mostra | `/sys/class/dmi/id/sys_vendor`; de fábrica, não vai |
 | `HardwareModel` | a aba Máquina mostra. **Nunca** `Model` | `/sys/class/dmi/id/product_name`; na Lenovo, sempre o `product_version` |
-| `RamTotalBytes` | não lê | `/proc/meminfo` (`MemTotal`), arredondado para cima em GiB |
-| `InstalledSoftware` | não lê | lista de `{ Name, Version, Arch, From, Publisher, Category, SizeBytes, InstallDate }`, o `SOFTWARES` do GLPI: o `dpkg-query` e o `rpm -qa`, em ordem de nome (`Software/InstalledSoftware.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
-| `Gpus` | guarda a lista como veio (`endpoints.gpus`), e a aba Máquina mostra o nome e a memória | lista de `{ Name, Manufacturer, Chipset, MemoryBytes, PciSlot, PciId }`, o `VIDEOS` do GLPI: os dispositivos de classe `0x03` do `/sys/bus/pci/devices`, com os nomes do `pci.ids` (`Inventory/GpuInfo.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)) |
+| `Gpus` | guarda a lista como veio (`endpoints.gpus`), e a aba Máquina mostra o nome e a memória | lista de `{ Name, MemoryBytes }`: os dispositivos de classe `0x03` do `/sys/bus/pci/devices`, com o nome do `pci.ids` e a VRAM do `amdgpu` (`Inventory/GpuInfo.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar), [A24](../decisoes/protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem)) |
 
 - **`MacAddress`, `LocalIp` e `CpuModel` ausentes apagam o valor gravado;** `BiosSerial`, `SystemUuid`,
   `Manufacturer`, `HardwareModel` e `Gpus`, não: o que não veio fica como estava (`register-handshake.usecase.ts`).
@@ -90,9 +88,9 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 - **Do lado do agente** ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)):
   quem monta é o `Inventory/MachineInventory.cs`, relido a cada conexão, na forma que só muda quando a máquina
   muda.
-- **O que o servidor não lê, ele ignora sem erro:** `RamTotalBytes` e `InstalledSoftware` hoje, e qualquer campo
-  fora da tabela. O usuário logado o agente não manda ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado));
-  os programas ele já manda, no formato do GLPI, para o dia em que o servidor guardar ([A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar)).
+- **O que o servidor não lê, ele ignora sem erro**, e o agente não manda: nem o `RamTotalBytes` nem o
+  `InstalledSoftware` do protocolo ([A24](../decisoes/protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem)), nem o usuário logado
+  ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado)).
 
 ---
 
@@ -103,8 +101,8 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 | `CpuUsagePercentage` | porcentagem, de 0 a 100 |
 | `RamTotalBytes`, `RamUsedBytes` | bytes |
 | `Disks` | lista de `{ Name, TotalGb, UsedGb }`, com GB = 1024³ bytes |
-| `Network` | `{ BytesReceived, BytesSent, RxSpeedKbps, TxSpeedKbps }`: os contadores em bytes, a velocidade em kbit/s (1 kbit = 1000 bits) |
-| `TopProcesses` | lista de `{ Pid, Name, RamMb }` |
+| `Network` | `{ BytesReceived, BytesSent, RxSpeedKbps, TxSpeedKbps }`: **o agente não manda** ([A24](../decisoes/protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem)) |
+| `TopProcesses` | lista de `{ Pid, Name, RamMb }`: **o agente não manda** ([A24](../decisoes/protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem)) |
 
 - **Uma amostra é uma linha** em `telemetries`, com a hora em que **chegou** ao servidor: o protocolo não tem
   campo de hora, e o agente não guarda a amostra que não pôde mandar
@@ -112,8 +110,8 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
   amostra de cada máquina fica: o expurgo diário apaga as outras.
 - **O intervalo é do agente.** O servidor não impõe nenhum. Este agente manda de hora em hora
   ([A12](../decisoes/protocolo.md#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)).
-- Campo ausente vira zero ou lista vazia (`normalize-payload.helper.ts`).
-- **A tela mostra o total de rede pelos bytes** (`src/helpers/metrics.helper.ts`).
+- Campo ausente vira zero ou lista vazia (`normalize-payload.helper.ts`): a rede vai zerada e os processos, vazios,
+  até a tela do SentinelWeb deixar de mostrá-los.
 - **Do lado do agente**
   ([A16](../decisoes/protocolo.md#a16--a-telemetria-a-média-desde-a-amostra-anterior-o-disco-como-o-df-a-rede-só-pela-placa-física)):
   o `Telemetry/TelemetryService.cs` manda a primeira amostra quando a conexão sobe e depois uma por hora; sem
@@ -124,11 +122,8 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
   | `CpuUsagePercentage` | `Telemetry/Cpu/CpuUsage.cs` | a média desde a amostra anterior, pelo `/proc/stat` (a primeira, de 10 s) |
   | `RamTotalBytes`, `RamUsedBytes` | `Telemetry/Memory/MemoryUsage.cs` | o `MemTotal` cru e `MemTotal − MemAvailable`, do `/proc/meminfo` |
   | `Disks` | `Telemetry/Disk/DiskUsage.cs` | cada dispositivo local do `/proc/mounts`, uma vez, sem `tmpfs`, `squashfs`, `overlay` e afins; total e usado como o `df` |
-  | `Network` | `Telemetry/Network/NetworkUsage.cs` | a soma das placas com `device/` no `/proc/net/dev`, e a velocidade média desde a amostra anterior |
-  | `TopProcesses` | `Telemetry/Processes/TopProcesses.cs` | os 10 de maior `VmRSS`, um por PID, com o nome do `comm` |
 
-- **Máquina física ou VM.** A VM tem placa com `device/` (virtio, netvsc). No contêiner (LXC, Docker), a placa
-  é uma veth e a rede vai zerada — e o agente nem é para ele: o serial que ele mandaria é o do hospedeiro (A20).
+- **O contêiner (LXC, Docker) não é para o agente:** o serial que ele mandaria é o do hospedeiro (A20).
 - **No ZFS, cada dataset é um disco** com o espaço livre do pool inteiro, como o Telegraf e o `df` mostram:
   somar os totais conta o pool mais de uma vez. O servidor não soma.
 - **O envio que não chegou não para nada:** a conexão que cai no meio do envio devolve `false` ao

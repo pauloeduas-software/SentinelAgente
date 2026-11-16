@@ -13,30 +13,28 @@ public sealed class MessagesTests
             Hwid = "abc123",
             Hostname = "pc-01",
             OsVersion = "Ubuntu 24.04",
-            RamTotalBytes = 17_179_869_184,
+            CpuModel = "Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz",
         });
 
         Assert.Equal(
-            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Ubuntu 24.04","RamTotalBytes":17179869184}}""",
+            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Ubuntu 24.04","CpuModel":"Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz"}}""",
             Encoding.UTF8.GetString(message.Json.Span));
     }
 
     [Fact]
-    public void Os_programas_e_as_placas_vao_com_os_nomes_do_glpi()
+    public void As_placas_vao_com_o_nome_e_a_memoria()
     {
         var message = Messages.CreateHandshake(new HandshakePayload
         {
             Hwid = "abc123",
             Hostname = "pc-01",
             OsVersion = "Fedora Linux 41",
-            InstalledSoftware = [new SoftwarePayload("bash", "5.2.32-1.fc41", "x86_64", "rpm", "Fedora Project", null, 8_460_279, new DateOnly(2024, 11, 13))],
-            Gpus = [new GpuPayload("GeForce MX150", "NVIDIA Corporation", "GP108M", null, "01:00.0", "10de:1d10")],
+            Gpus = [new GpuPayload("GeForce MX150", null), new GpuPayload("Radeon RX 6600", 8_589_934_592)],
         });
 
         Assert.Equal(
             """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Fedora Linux 41",""" +
-            """ "InstalledSoftware":[{"Name":"bash","Version":"5.2.32-1.fc41","Arch":"x86_64","From":"rpm","Publisher":"Fedora Project","SizeBytes":8460279,"InstallDate":"2024-11-13"}],""".TrimStart() +
-            """ "Gpus":[{"Name":"GeForce MX150","Manufacturer":"NVIDIA Corporation","Chipset":"GP108M","PciSlot":"01:00.0","PciId":"10de:1d10"}]}}""".TrimStart(),
+            """ "Gpus":[{"Name":"GeForce MX150"},{"Name":"Radeon RX 6600","MemoryBytes":8589934592}]}}""".TrimStart(),
             Encoding.UTF8.GetString(message.Json.Span));
     }
 
@@ -50,15 +48,11 @@ public sealed class MessagesTests
             RamTotalBytes = 16_000,
             RamUsedBytes = 4_000,
             Disks = [new DiskPayload("/", 476.94, 180.5)],
-            Network = new NetworkPayload(1_200, 300, 4_000.5, 800),
-            TopProcesses = [new ProcessPayload(4242, "chrome", 820.3)],
         });
 
         Assert.Equal(
             """{"Type":"Telemetry","Payload":{"Hwid":"abc123","CpuUsagePercentage":12.5,"RamTotalBytes":16000,"RamUsedBytes":4000,""" +
-            """ "Disks":[{"Name":"/","TotalGb":476.94,"UsedGb":180.5}],""".TrimStart() +
-            """ "Network":{"BytesReceived":1200,"BytesSent":300,"RxSpeedKbps":4000.5,"TxSpeedKbps":800},""".TrimStart() +
-            """ "TopProcesses":[{"Pid":4242,"Name":"chrome","RamMb":820.3}]}}""".TrimStart(),
+            """ "Disks":[{"Name":"/","TotalGb":476.94,"UsedGb":180.5}]}}""".TrimStart(),
             Encoding.UTF8.GetString(message.Json.Span));
     }
 

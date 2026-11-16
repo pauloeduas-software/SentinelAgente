@@ -6,7 +6,7 @@ namespace SentinelAgente.Inventory;
 /// Fedora em <c>/usr/share/hwdata</c>.
 /// </summary>
 /// <remarks>
-/// O arquivo tem 1,5 MB: só os fabricantes pedidos são guardados, e a leitura
+/// O arquivo tem 1,5 MB: só os dispositivos dos fabricantes pedidos são guardados, e a leitura
 /// para nas classes, que vêm depois de todos os dispositivos. Sem o arquivo,
 /// nome nenhum, e quem chamou fica com o id.
 /// </remarks>
@@ -14,11 +14,7 @@ internal sealed class PciIds
 {
     private static readonly string[] Files = ["usr/share/misc/pci.ids", "usr/share/hwdata/pci.ids"];
 
-    private readonly Dictionary<string, string> _vendors = [];
     private readonly Dictionary<string, string> _devices = [];
-
-    /// <summary>O nome do fabricante (<c>10de</c>), ou <c>null</c>.</summary>
-    public string? Vendor(string vendor) => _vendors.GetValueOrDefault(vendor);
 
     /// <summary>O nome do dispositivo (<c>10de:1f99</c>), ou <c>null</c>.</summary>
     public string? Device(string pciId) => _devices.GetValueOrDefault(pciId);
@@ -53,7 +49,6 @@ internal sealed class PciIds
             {
                 // "10de  NVIDIA Corporation"
                 vendor = Id(line, 0) is { } id && vendors.Contains(id) ? id : null;
-                if (vendor is not null) _vendors[vendor] = line[6..].Trim();
             }
             else if (vendor is not null && line.Length > 1 && line[1] != '\t' && Id(line, 1) is { } device)
             {

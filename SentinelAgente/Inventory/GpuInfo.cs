@@ -4,14 +4,14 @@ namespace SentinelAgente.Inventory;
 
 /// <summary>
 /// As placas de vídeo, como o GLPI Agent (<c>Generic/PCI/Videos.pm</c>): os
-/// dispositivos PCI de vídeo, com o nome e o chip do <c>pci.ids</c> (A22). A
+/// dispositivos PCI de vídeo, com o nome do <c>pci.ids</c> e a memória (A22, A24). A
 /// classe é a do <c>/sys/bus/pci/devices/&lt;slot&gt;/class</c>, <c>0x03</c> (VGA, 3D e
 /// tela), em vez do nome que o lspci escreve, que é o que o GLPI compara.
 /// </summary>
 /// <remarks>
-/// "Navi 22 [Radeon RX 6700 XT]" vira chip "Navi 22" e nome "Radeon RX 6700 XT",
-/// a mesma divisão do GLPI; sem colchete, o nome é o texto inteiro, e sem o
-/// <c>pci.ids</c>, o id. A memória é a VRAM que o <c>amdgpu</c> mostra: o GLPI
+/// "Navi 22 [Radeon RX 6700 XT]" vira o nome "Radeon RX 6700 XT", a mesma divisão
+/// do GLPI, e o chip fica de fora; sem colchete, o nome é o texto inteiro, e sem o
+/// <c>pci.ids</c>, o par fabricante:dispositivo. A memória é a VRAM que o <c>amdgpu</c> mostra: o GLPI
 /// manda o tamanho da janela do PCI, que é 256 MB numa placa de 8 GB, e a NVIDIA
 /// e a Intel não têm arquivo para ela. A resolução, que o GLPI tira do
 /// <c>xrandr</c>, não vai: o serviço não tem tela.
@@ -47,8 +47,7 @@ internal static class GpuInfo
             .Select(card =>
             {
                 var pciId = $"{card.Vendor}:{card.Device}";
-                var (chipset, name) = Split(ids.Device(pciId));
-                return new GpuPayload(name ?? pciId, ids.Vendor(card.Vendor), chipset, card.Vram, Slot(card.Address), pciId);
+                return new GpuPayload(Name(ids.Device(pciId)) ?? pciId, card.Vram);
             })
             .ToList();
     }
@@ -57,15 +56,10 @@ internal static class GpuInfo
     private static string? Hex(string? value) =>
         value is { Length: 6 } && value.StartsWith("0x") ? value[2..].ToLowerInvariant() : null;
 
-    // "0000:01:00.0" → "01:00.0", como o lspci escreve quando há um domínio só.
-    private static string Slot(string address) => address.StartsWith("0000:") ? address[5..] : address;
-
-    private static (string? Chipset, string? Name) Split(string? device)
+    private static string? Name(string? device)
     {
-        if (device is null) return (null, null);
+        if (device is null) return null;
         var open = device.LastIndexOf(" [", StringComparison.Ordinal);
-        return open > 0 && device.EndsWith(']')
-            ? (device[..open], device[(open + 2)..^1])
-            : (null, device);
+        return open > 0 && device.EndsWith(']') ? device[(open + 2)..^1] : device;
     }
 }

@@ -1,7 +1,6 @@
 using SentinelAgente.Commands;
 using SentinelAgente.Connection;
 using SentinelAgente.Inventory;
-using SentinelAgente.Software;
 using SentinelAgente.Telemetry;
 
 // O PROCESSO: liga o host e a integração com o systemd (pronto, parada e log no
@@ -18,7 +17,6 @@ builder.Configuration.AddCommandLine(args);
 
 builder.Services.AddSystemd();
 builder.Services.AddServerConnection(builder.Configuration);
-builder.Services.AddSoftware();
 builder.Services.AddInventory();
 builder.Services.AddTelemetry();
 builder.Services.AddCommands();

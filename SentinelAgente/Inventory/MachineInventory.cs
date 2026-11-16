@@ -1,6 +1,5 @@
 using SentinelAgente.Connection;
 using SentinelAgente.Protocol;
-using SentinelAgente.Software;
 
 namespace SentinelAgente.Inventory;
 
@@ -11,30 +10,22 @@ namespace SentinelAgente.Inventory;
 /// <remarks>
 /// O HWID é lido, ou sorteado, uma vez (A20), e é o mesmo para quem mais o
 /// manda (a telemetria). Se o arquivo dele não abre, a exceção sai antes da
-/// primeira conexão e para o serviço. A lista de programas vem do
-/// <c>Software</c>, relida também a cada conexão, como o GLPI Agent faz a cada
-/// inventário.
+/// primeira conexão e para o serviço.
 /// </remarks>
 public sealed class MachineInventory : IHandshakeSource
 {
     private readonly SystemRoot _root;
     private readonly Func<string, IReadOnlyList<InterfaceAddress>> _addressesOf;
     private readonly Lazy<string> _hwid;
-    private readonly Func<CancellationToken, Task<IReadOnlyList<SoftwarePayload>?>> _software;
 
-    internal MachineInventory(InstalledSoftware software)
-        : this("/", PrimaryNetwork.SystemAddresses, Identity.Hwid.DefaultFile, software.ReadAsync) { }
+    internal MachineInventory()
+        : this("/", PrimaryNetwork.SystemAddresses, Identity.Hwid.DefaultFile) { }
 
-    internal MachineInventory(
-        string root,
-        Func<string, IReadOnlyList<InterfaceAddress>> addressesOf,
-        string hwidFile,
-        Func<CancellationToken, Task<IReadOnlyList<SoftwarePayload>?>>? software = null)
+    internal MachineInventory(string root, Func<string, IReadOnlyList<InterfaceAddress>> addressesOf, string hwidFile)
     {
         _root = new SystemRoot(root);
         _addressesOf = addressesOf;
         _hwid = new Lazy<string>(() => Identity.Hwid.ReadOrCreate(hwidFile));
-        _software = software ?? (_ => Task.FromResult<IReadOnlyList<SoftwarePayload>?>(null));
     }
 
     /// <summary>
@@ -43,8 +34,7 @@ public sealed class MachineInventory : IHandshakeSource
     /// </summary>
     public string Hwid => _hwid.Value;
 
-    public async ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) =>
-        Create() with { InstalledSoftware = await _software(cancellationToken) };
+    public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Create());
 
     internal HandshakePayload Create()
     {
@@ -63,7 +53,6 @@ public sealed class MachineInventory : IHandshakeSource
             SystemUuid = dmi.SystemUuid,
             Manufacturer = dmi.Manufacturer,
             HardwareModel = dmi.HardwareModel,
-            RamTotalBytes = MemInfo.Read(_root),
             Gpus = GpuInfo.Read(_root),
         };
     }

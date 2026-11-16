@@ -6,7 +6,7 @@ namespace SentinelAgente.Telemetry;
 /// nova e um registro no <see cref="TelemetryRegistration"/>.
 /// </summary>
 /// <remarks>
-/// Quem compara com a leitura anterior (CPU, rede) guarda essa leitura: a
+/// Quem compara com a leitura anterior (a CPU) guarda essa leitura: a
 /// amostra sai com a média desde a anterior (A16).
 /// </remarks>
 public interface ITelemetryCollector

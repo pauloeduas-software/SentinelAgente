@@ -15,7 +15,7 @@
 | Arquivo | Assunto | Decisões |
 |---|---|---|
 | [`plataforma.md`](./plataforma.md) | **Plataforma** — a linguagem, as pastas e a instalação | A1, A2, A3, A19, A21 |
-| [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22 |
+| [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22, A24 |
 | [`comandos.md`](./comandos.md) | **Comandos** — o que o agente executa | A5, A18, A23 |
 | [`escopo.md`](./escopo.md) | **Escopo** — o que o agente antigo fazia e este não faz | A6, A7, A8, A17 |
 
@@ -33,6 +33,7 @@ As decisões não se reescrevem, então quando uma corrige a outra isso fica esc
 | **A4**, **A13** e **A15** (em parte: o hash do HWID) | **A20** | o HWID é um UUID sorteado na instalação, e o SentinelWeb reconhece a máquina reinstalada pelo serial e o UUID (a CV de lá); o `BiosSerial` cai no serial da placa |
 | **A2** (em parte: a pasta `Service`) | **A21** | a pasta sai: a vida do serviço é do `AddSystemd()`, e o laço de cada função fica na pasta dela |
 | **A10**, **A16** e **A2** (em parte) | **A22** | os programas e as placas de vídeo vão no handshake, no formato do GLPI, antes de o SentinelWeb guardar; a pasta `Telemetry/Gpu` sai, e o uso da GPU continua fora |
+| **A10**, e em parte **A14**, **A16** e **A22** | **A24** | os programas, a RAM do handshake, a rede e os processos saem, e a GPU fica com o nome e a memória: o agente manda só o que o SentinelWeb lê |
 | **A5** (em parte: os comandos de terminal) | **A23** | a lista fica nas três ações de energia e o terminal remoto não entra; a resposta aos comandos continua possível |
 | **A3** (em parte: a configuração no pacote) | **A19** | o `agent.json` e o segredo saem de variáveis da instalação, e o serviço só liga com o `agent.json` |
 | **A13** e **A14** (em parte) | **A15** | o serial de fábrica se compara sem separadores e as listas crescem; a Lenovo usa sempre o `product_version`; o túnel se reconhece pelo tipo da placa |

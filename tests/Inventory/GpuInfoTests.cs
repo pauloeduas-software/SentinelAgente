@@ -13,8 +13,8 @@ public sealed class GpuInfoTests
     {
         Assert.Equal(
         [
-            new GpuPayload("UHD Graphics 620", "Intel Corporation", null, null, "00:02.0", "8086:5917"),
-            new GpuPayload("GeForce MX150", "NVIDIA Corporation", "GP108M", null, "01:00.0", "10de:1d10"),
+            new GpuPayload("UHD Graphics 620", null),
+            new GpuPayload("GeForce MX150", null),
         ], Read("thinkpad"));
     }
 
@@ -23,15 +23,14 @@ public sealed class GpuInfoTests
     {
         Assert.Equal(
         [
-            new GpuPayload("Radeon RX 6700/6700 XT/6750 XT / 6800M/6850M XT", "Advanced Micro Devices, Inc. [AMD/ATI]", "Navi 22",
-                12 * 1024L * 1024 * 1024, "03:00.0", "1002:73df"),
+            new GpuPayload("Radeon RX 6700/6700 XT/6750 XT / 6800M/6850M XT", 12 * 1024L * 1024 * 1024),
         ], Read("pc-montado"));
     }
 
     [Fact]
     public void Sem_o_pci_ids_a_placa_fica_com_o_id()
     {
-        Assert.Equal([new GpuPayload("1234:1111", null, null, null, "00:01.0", "1234:1111")], Read("servidor-kvm"));
+        Assert.Equal([new GpuPayload("1234:1111", null)], Read("servidor-kvm"));
     }
 
     [Fact]
