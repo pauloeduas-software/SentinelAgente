@@ -16,8 +16,7 @@ SentinelAgente/
 ├── Config/ · Connection/ · Protocol/          # a base: as funções usam, e elas não conhecem as funções
 ├── Identity/ · Inventory/ · Software/         # quem é a máquina e o que tem instalado
 ├── Telemetry/  Cpu · Memory · Disk · Network · Processes · Gpu
-├── Commands/                                  # desligar, reiniciar, suspender
-└── Service/                                   # a vida do serviço no systemd
+└── Commands/                                  # desligar, reiniciar, suspender
 tests/                                         # as mesmas pastas, com testdata/
 packaging/                                     # o pacote .deb
 ```
@@ -29,7 +28,7 @@ Leia antes de criar arquivo novo.
 
 A conexão com o SentinelWeb está pronta (`Config/`, `Protocol/` e `Connection/`): endereço na configuração,
 `wss://`, um token por máquina, que o cadastro troca pelo segredo de instalação, e reconexão. Ela entra no
-`Program.cs` junto com o `Identity/` e o `Inventory/`, que montam o handshake; as outras pastas ainda são
-esqueleto. O contrato que o código precisa cumprir está em
+`Program.cs` junto com o `Identity/` e o `Inventory/`, que montam o handshake, a `Telemetry/` e os
+`Commands/`. Ainda vazias: `Software/` (espera a A10) e `Telemetry/Gpu/`. O contrato que o código precisa cumprir está em
 [`docs/referencia/protocolo.md`](./docs/referencia/protocolo.md), e o ambiente, em
 [`docs/guias/preparar-o-ambiente.md`](./docs/guias/preparar-o-ambiente.md).

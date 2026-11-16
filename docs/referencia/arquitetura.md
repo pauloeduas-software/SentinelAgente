@@ -15,11 +15,11 @@ comando funciona abre `Commands/` e acha tudo, a interface inclusive.
 Três pastas são **base**, e as outras as usam:
 
 ```
-Commands · Identity · Inventory · Software · Telemetry · Service   ──▶   Connection · Protocol · Config
+Commands · Identity · Inventory · Software · Telemetry   ──▶   Connection · Protocol · Config
 ```
 
 - `Connection`, `Protocol` e `Config` **não** conhecem nenhuma função: não importam nada de `Commands`,
-  `Identity`, `Inventory`, `Software`, `Telemetry` nem `Service`.
+  `Identity`, `Inventory`, `Software` nem `Telemetry`.
 - Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity`), nunca o
   contrário em ciclo.
 - O `Program.cs` é o único lugar que conhece todas: ele liga as peças.
@@ -50,8 +50,7 @@ SentinelAgente/
 │   │   ├── Network/
 │   │   ├── Processes/             # quais programas estão rodando
 │   │   └── Gpu/                   # uma leitura por fabricante: NVIDIA, AMD, Intel
-│   ├── Commands/                  # a lista fechada de ações e quem roda o systemctl (A5, A18)
-│   └── Service/                   # a vida do serviço: iniciar, parar, avisar o systemd
+│   └── Commands/                  # a lista fechada de ações e quem roda o systemctl (A5, A18)
 ├── tests/                         # as mesmas pastas do agente
 │   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
 ├── packaging/                     # o .deb: a unidade do systemd, os scripts de instalar e remover e o build-deb.sh (A3, A19)

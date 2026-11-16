@@ -5,7 +5,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A1–A3 e A19 (a A3 superada em parte pela A19).
+> Decisões neste arquivo: A1–A3, A19 e A21 (a A3 superada em parte pela A19, e a A2 em parte pela A21).
 
 ---
 
@@ -36,6 +36,9 @@ o que se pede do agente: serviço do systemd, `/proc` e `/sys`, WebSocket e os c
 ---
 
 ## A2 — Um projeto, com uma pasta por função
+
+> **Superada em parte por [A21](#a21--a-pasta-service-sai-a-vida-do-serviço-é-do-addsystemd):**
+> a pasta `Service` sai; a vida do serviço fica no `AddSystemd()` do `Program.cs`.
 
 **Decidido** (2026-11-13): um projeto (`SentinelAgente/`, na raiz do repositório, sem `src/`) com uma pasta por função direto na raiz dele —
 `Config`, `Connection`, `Protocol`, `Identity`, `Inventory`, `Telemetry`, `Commands` e `Service` —, e dentro de
@@ -183,3 +186,22 @@ com o `dotnet publish` e o `dpkg-deb`, sem root e sem nada além do SDK. A vers�
   (`packages.microsoft.com`), e com ele o mesmo pacote instala. O `.rpm` continua de fora (A3).
 - **A licença do repositório não está definida:** o `copyright` diz isso.
 
+---
+
+## A21 — A pasta `Service` sai: a vida do serviço é do `AddSystemd()`
+
+**Decidido** (2026-11-15), corrigindo em parte a
+[A2](#a2--um-projeto-com-uma-pasta-por-função): a pasta `Service/` sai. Avisar o systemd que o agente está
+pronto, parar quando ele manda e escrever no journal é o `AddSystemd()` do `Program.cs`
+([A3](#a3--o-agente-é-um-serviço-do-systemd-instalado-por-pacote)), e o laço de cada função mora na pasta
+dela (`Connection/AgentConnection.cs`, `Telemetry/TelemetryService.cs`). Não sobrou nada para a pasta.
+
+**Descartado:** **guardar a pasta vazia** para o dia em que o agente rodar em outro sistema. A A2 a justificava
+pelo `orbit/pkg/osservice` do Fleet, e no Linux ele é um corpo vazio (`osservice_notwindows.go`: "a placeholder
+for non-windows OSes"); só o `osservice_windows.go` tem código. O Windows está fora (A2), e a pasta volta junto
+com ele, se ele vier.
+
+**Por quê:** é o que os projetos olhados fazem no Linux. O Tactical RMM põe a vida do serviço no
+`agent/svc.go`, ao lado das outras funções, e não numa pasta à parte; o GLPI Agent, no
+`lib/GLPI/Agent/Daemon.pm`, com uma pasta `Daemon/` só para o `Win32.pm`. Nos dois, e no Fleet, o que é
+do systemd fica com o systemd.
