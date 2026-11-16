@@ -5,11 +5,13 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A5 e A18.
+> Decisões neste arquivo: A5, A18 e A23 (a A5 superada em parte pela A23).
 
 ---
 
 ## A5 — Comando é lista fechada, sem shell
+
+> **Superada em parte por [A23](#a23--a-lista-fica-nas-três-ações-e-o-terminal-não-entra):** os comandos de terminal saíram de avaliação e não entram.
 
 **Decidido** (2026-11-13):
 - O agente conhece as três ações que o servidor manda: `SHUTDOWN`, `REBOOT` e `SUSPEND`. Outra `Action` é
@@ -89,3 +91,26 @@ auditoria do servidor.
 - **A conexão depois da suspensão.** A máquina volta com o socket aberto e morto; o ping do WebSocket (30 s,
   com 15 s de espera, em `Connection/ConnectionTimings.cs`) derruba a conexão e o agente reconecta.
 
+---
+
+## A23 — A lista fica nas três ações, e o terminal não entra
+
+**Decidido** (2026-11-15), corrigindo em parte a [A5](#a5--comando-é-lista-fechada-sem-shell):
+- **O agente fica com `SHUTDOWN`, `REBOOT` e `SUSPEND`**, e a lista não cresce. Outra `Action` continua
+  recusada e no log, como na A5.
+- **Comandos de terminal não entram.** A A5 os deixava em avaliação; a avaliação acabou.
+
+**Descartado:**
+- **O terminal remoto**, como o do Tactical RMM e o do MeshAgent. Quem tomasse o painel ou o servidor
+  rodaria qualquer coisa como root em todas as máquinas de uma vez, e nenhum caso de uso pedido precisa disso.
+- **Ações novas na lista fechada:** bloquear a tela (`loginctl lock-sessions`), hibernar, pedir o inventário
+  na hora, atualizar os pacotes. Cada uma seria um executável fixo e caberia na regra da A5, mas nenhuma foi
+  pedida pelo painel, e o inventário já se refaz a cada conexão.
+
+**Por quê:** o agente é de inventário e telemetria; os três comandos de energia são o que o painel usa. Cada
+ação nova é mais um jeito de o servidor mandar como root, e sem a mensagem de resposta (fora na A5 e na A18)
+o painel nem saberia se ela rodou.
+
+**O que fica de fora, declarado:** a resposta do agente aos três comandos não é comando novo e continua
+possível, do jeito que a [A18](#a18--o-comando-roda-o-systemctl-direto-respeita-os-bloqueios-e-diz-no-log-como-terminou)
+descreve, quando o SentinelWeb ganhar a mensagem.
