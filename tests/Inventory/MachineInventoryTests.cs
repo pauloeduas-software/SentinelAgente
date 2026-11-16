@@ -227,6 +227,20 @@ public sealed class MachineInventoryTests : IDisposable
         Assert.Null(payload.SystemUuid);
     }
 
+    [Fact]
+    public void O_hwid_lido_uma_vez_vale_para_quem_mais_o_manda()
+    {
+        var inventory = new MachineInventory(_directory, _ => [], _hwidFile);
+        var handshake = inventory.Create();
+
+        // Apagado com o agente rodando, o arquivo não troca o HWID: a telemetria
+        // continua com o da conexão, e não sorteia outro.
+        File.Delete(_hwidFile);
+
+        Assert.Equal(handshake.Hwid, inventory.Hwid);
+        Assert.False(File.Exists(_hwidFile));
+    }
+
     private void Write(string relative, string content)
     {
         var path = Path.Combine(_directory, relative);

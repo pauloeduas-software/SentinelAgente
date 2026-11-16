@@ -29,7 +29,7 @@ internal sealed partial class TelemetryService(
         {
             while (!link.IsConnected) await Task.Delay(timings.ConnectedPoll, stoppingToken);
 
-            // A conexão só sobe com o HWID gravado (A20): aqui ele já existe.
+            // O HWID com que a conexão se apresentou: a amostra vai com o mesmo.
             var id = hwid();
 
             // A leitura de partida: CPU e rede precisam de uma anterior para a média.
@@ -46,6 +46,14 @@ internal sealed partial class TelemetryService(
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             // O serviço está parando.
+        }
+        catch (Exception e)
+        {
+            // Como na conexão: o host do .NET para com código 0 quando o serviço
+            // lança, e o systemd só reinicia o que sai com erro.
+            LogFatal(e);
+            Environment.ExitCode = 1;
+            throw;
         }
     }
 
@@ -82,6 +90,9 @@ internal sealed partial class TelemetryService(
         }
         return sample;
     }
+
+    [LoggerMessage(LogLevel.Critical, "A telemetria parou por um erro que não se conserta tentando de novo.")]
+    private partial void LogFatal(Exception exception);
 
     [LoggerMessage(LogLevel.Information, "Amostra de telemetria descartada: sem conexão com o servidor.")]
     private partial void LogDiscarded();

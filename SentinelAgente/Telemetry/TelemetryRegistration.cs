@@ -1,5 +1,4 @@
 using SentinelAgente.Connection;
-using SentinelAgente.Identity;
 using SentinelAgente.Inventory;
 using SentinelAgente.Telemetry.Cpu;
 using SentinelAgente.Telemetry.Disk;
@@ -13,7 +12,8 @@ public static class TelemetryRegistration
 {
     /// <summary>
     /// Registra os coletores e a amostra de hora em hora. Pede o
-    /// <see cref="IServerLink"/> da conexão.
+    /// <see cref="IServerLink"/> da conexão e o HWID do <see cref="MachineInventory"/>,
+    /// o mesmo do handshake.
     /// </summary>
     public static IServiceCollection AddTelemetry(this IServiceCollection services)
     {
@@ -30,7 +30,7 @@ public static class TelemetryRegistration
             provider.GetRequiredService<IServerLink>(),
             provider.GetServices<ITelemetryCollector>(),
             provider.GetRequiredService<TelemetryTimings>(),
-            () => Hwid.ReadOrCreate(),
+            () => provider.GetRequiredService<MachineInventory>().Hwid,
             provider.GetRequiredService<ILogger<TelemetryService>>()));
         return services;
     }

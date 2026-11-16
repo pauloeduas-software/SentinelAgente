@@ -7,6 +7,8 @@ using SentinelAgente.Tests.Connection;
 
 namespace SentinelAgente.Tests.Telemetry;
 
+// O código de saída é do processo inteiro: os testes que mexem nele não rodam juntos.
+[Collection("Código de saída")]
 public sealed class TelemetryServiceTests : IAsyncDisposable
 {
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(10);
@@ -58,9 +60,11 @@ public sealed class TelemetryServiceTests : IAsyncDisposable
         public void Collect(TelemetrySample sample) => sample.RamTotalBytes = 1024;
     }
 
-    private async Task StartAsync(params ITelemetryCollector[] collectors)
+    private Task StartAsync(params ITelemetryCollector[] collectors) => StartAsync(() => "abc123", collectors);
+
+    private async Task StartAsync(Func<string> hwid, params ITelemetryCollector[] collectors)
     {
-        _service = new TelemetryService(_link, collectors, Fast, () => "abc123", _log);
+        _service = new TelemetryService(_link, collectors, Fast, hwid, _log);
         await _service.StartAsync(CancellationToken.None);
     }
 
@@ -118,6 +122,24 @@ public sealed class TelemetryServiceTests : IAsyncDisposable
 
         Assert.Equal(1024, first.RootElement.GetProperty("Payload").GetProperty("RamTotalBytes").GetInt64());
         Assert.Contains(_log.Lines, line => line.Contains("Broken"));
+    }
+
+    [Fact]
+    public async Task Erro_fora_da_amostra_para_o_servico_com_erro()
+    {
+        _link.Connected = true;
+        try
+        {
+            await StartAsync(() => throw new InvalidOperationException("sem HWID"), new CountingCpu());
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _service!.ExecuteTask!);
+            Assert.Equal(1, Environment.ExitCode);
+            Assert.Contains(_log.Lines, line => line.Contains("A telemetria parou"));
+        }
+        finally
+        {
+            Environment.ExitCode = 0;
+        }
     }
 
     private async Task<string> ReadAsync()

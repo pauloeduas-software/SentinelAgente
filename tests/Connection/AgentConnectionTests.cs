@@ -9,6 +9,8 @@ using SentinelAgente.Protocol;
 
 namespace SentinelAgente.Tests.Connection;
 
+// O código de saída é do processo inteiro: os testes que mexem nele não rodam juntos.
+[Collection("Código de saída")]
 public sealed class AgentConnectionTests : IAsyncLifetime
 {
     private const string Token = "token-da-maquina";

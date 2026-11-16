@@ -20,7 +20,7 @@ Commands · Identity · Inventory · Software · Telemetry   ──▶   Connect
 
 - `Connection`, `Protocol` e `Config` **não** conhecem nenhuma função: não importam nada de `Commands`,
   `Identity`, `Inventory`, `Software` nem `Telemetry`.
-- Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity`), nunca o
+- Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity`, e a `Telemetry` o HWID que o `Inventory` leu), nunca o
   contrário em ciclo.
 - O `Program.cs` é o único lugar que conhece todas: ele liga as peças.
 

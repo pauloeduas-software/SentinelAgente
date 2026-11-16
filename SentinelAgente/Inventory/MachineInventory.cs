@@ -1,5 +1,4 @@
 using SentinelAgente.Connection;
-using SentinelAgente.Identity;
 using SentinelAgente.Protocol;
 
 namespace SentinelAgente.Inventory;
@@ -9,36 +8,41 @@ namespace SentinelAgente.Inventory;
 /// poucos arquivos, e assim a peça trocada aparece na próxima.
 /// </summary>
 /// <remarks>
-/// O HWID é lido, ou sorteado, uma vez (A20). Se o arquivo dele não abre, a
-/// exceção sai da primeira conexão e para o serviço.
+/// O HWID é lido, ou sorteado, uma vez (A20), e é o mesmo para quem mais o
+/// manda (a telemetria). Se o arquivo dele não abre, a exceção sai antes da
+/// primeira conexão e para o serviço.
 /// </remarks>
 public sealed class MachineInventory : IHandshakeSource
 {
     private readonly SystemRoot _root;
     private readonly Func<string, IReadOnlyList<InterfaceAddress>> _addressesOf;
-    private readonly string _hwidFile;
-    private string? _hwid;
+    private readonly Lazy<string> _hwid;
 
-    public MachineInventory() : this("/", PrimaryNetwork.SystemAddresses, Hwid.DefaultFile) { }
+    public MachineInventory() : this("/", PrimaryNetwork.SystemAddresses, Identity.Hwid.DefaultFile) { }
 
     internal MachineInventory(string root, Func<string, IReadOnlyList<InterfaceAddress>> addressesOf, string hwidFile)
     {
         _root = new SystemRoot(root);
         _addressesOf = addressesOf;
-        _hwidFile = hwidFile;
+        _hwid = new Lazy<string>(() => Identity.Hwid.ReadOrCreate(hwidFile));
     }
+
+    /// <summary>
+    /// O HWID com que a conexão se apresentou: quem manda dado usa este, e não
+    /// relê o arquivo, como o <c>AgentID</c> do Tactical RMM, lido uma vez.
+    /// </summary>
+    public string Hwid => _hwid.Value;
 
     public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Create());
 
     internal HandshakePayload Create()
     {
-        _hwid ??= Hwid.ReadOrCreate(_hwidFile);
         var dmi = DmiInfo.Read(_root);
         var network = PrimaryNetwork.Read(_root, _addressesOf);
 
         return new HandshakePayload
         {
-            Hwid = _hwid,
+            Hwid = Hwid,
             Hostname = Hostname(),
             OsVersion = OsRelease.Read(_root),
             CpuModel = CpuInfo.Read(_root),
