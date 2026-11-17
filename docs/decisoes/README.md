@@ -15,7 +15,7 @@
 | Arquivo | Assunto | Decisões |
 |---|---|---|
 | [`plataforma.md`](./plataforma.md) | **Plataforma** — a linguagem, as pastas e a instalação | A1, A2, A3, A19, A21 |
-| [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22, A24, A25 |
+| [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22, A24, A25, A26 |
 | [`comandos.md`](./comandos.md) | **Comandos** — o que o agente executa | A5, A18, A23 |
 | [`escopo.md`](./escopo.md) | **Escopo** — o que o agente antigo fazia e este não faz | A6, A7, A8, A17 |
 
@@ -36,6 +36,7 @@ As decisões não se reescrevem, então quando uma corrige a outra isso fica esc
 | **A10**, e em parte **A14**, **A16** e **A22** | **A24** | os programas, a RAM do handshake, a rede e os processos saem, e a GPU fica com o nome e a memória: o agente manda só o que o SentinelWeb lê |
 | **A14** (em parte: o inventário só a cada conexão) | **A25** | o handshake leva a versão do agente e vai de novo uma vez por dia; o 1008 leva o motivo do servidor para o log |
 | **A5** (em parte: os comandos de terminal) | **A23** | a lista fica nas três ações de energia e o terminal remoto não entra; a resposta aos comandos continua possível |
+| **A23** e **A25** (em parte: pedir o inventário na hora) | **A26** | o `REFRESH` do painel faz o agente mandar o handshake e uma amostra de telemetria na hora; a conexão o trata, e a lista dos comandos de sistema não muda |
 | **A3** (em parte: a configuração no pacote) | **A19** | o `agent.json` e o segredo saem de variáveis da instalação, e o serviço só liga com o `agent.json` |
 | **A13** e **A14** (em parte) | **A15** | o serial de fábrica se compara sem separadores e as listas crescem; a Lenovo usa sempre o `product_version`; o túnel se reconhece pelo tipo da placa |
 

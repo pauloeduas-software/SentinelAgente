@@ -125,6 +125,26 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task O_REFRESH_manda_o_handshake_e_avisa_a_telemetria_sem_passar_pelos_comandos()
+    {
+        _hub = await StartHubAsync();
+        var connection = await StartAsync(_hub.Url);
+        var server = await ReadAsync(_hub.Accepted);
+        await ReadAsync(_hub.Received);
+        var refresh = connection.RefreshRequested;
+
+        await SendTextAsync(server, """{"Type":"Command","Payload":{"Action":"REFRESH","CommandId":"9a2e"}}""");
+
+        using var again = JsonDocument.Parse(await ReadAsync(_hub.Received));
+        Assert.Equal("Handshake", again.RootElement.GetProperty("Type").GetString());
+        await refresh.WaitAsync(Wait, TestContext.Current.CancellationToken);
+        // A tarefa da vez completou, e a próxima espera o próximo pedido.
+        Assert.False(connection.RefreshRequested.IsCompleted);
+        Assert.False(_commands.Received.Reader.TryRead(out _));
+        Assert.Contains(_log.Lines, line => line.Contains("O servidor pediu os dados agora (9a2e)"));
+    }
+
+    [Fact]
     public async Task Envio_preso_quando_a_conexao_cai_devolve_false()
     {
         _hub = await StartHubAsync();

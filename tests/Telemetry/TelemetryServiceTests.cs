@@ -33,6 +33,14 @@ public sealed class TelemetryServiceTests : IAsyncDisposable
 
         public bool IsConnected => Connected;
 
+        private TaskCompletionSource _refresh = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task RefreshRequested => Volatile.Read(ref _refresh).Task;
+
+        /// <summary>O que a conexão faz quando chega o <c>REFRESH</c>.</summary>
+        public void RequestRefresh() =>
+            Interlocked.Exchange(ref _refresh, new(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+
         public Task<bool> TrySendAsync(OutgoingMessage message, CancellationToken cancellationToken)
         {
             if (Throws) throw new InvalidOperationException("envio quebrado");
@@ -84,6 +92,43 @@ public sealed class TelemetryServiceTests : IAsyncDisposable
         Assert.Equal("abc123", payload.GetProperty("Hwid").GetString());
         // A leitura 1 foi a de partida; a amostra é a 2.
         Assert.Equal(2, payload.GetProperty("CpuUsagePercentage").GetDouble());
+    }
+
+    [Fact]
+    public async Task O_pedido_do_servidor_manda_a_amostra_na_hora_e_o_seguinte_tambem()
+    {
+        _link.Connected = true;
+        // A hora de verdade e a janela longa: sem o pedido, nada iria no tempo do teste.
+        _service = new TelemetryService(
+            _link, [new CountingCpu()], Fast with { Interval = TimeSpan.FromHours(1), FirstWindow = TimeSpan.FromHours(1) },
+            () => "abc123", _log);
+        await _service.StartAsync(CancellationToken.None);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        // O pedido na janela de partida manda a primeira amostra.
+        _link.RequestRefresh();
+        Assert.StartsWith("""{"Type":"Telemetry""", await ReadAsync());
+
+        // E o seguinte, já no relógio da hora.
+        _link.RequestRefresh();
+        Assert.StartsWith("""{"Type":"Telemetry""", await ReadAsync());
+        Assert.False(_link.Sent.Reader.TryRead(out _));
+    }
+
+    [Fact]
+    public async Task O_pedido_antes_de_a_conexao_ser_notada_nao_se_perde()
+    {
+        // A conexão notada só depois do pedido, e a janela de partida longa.
+        _service = new TelemetryService(
+            _link, [new CountingCpu()], Fast with { Interval = TimeSpan.FromHours(1), FirstWindow = TimeSpan.FromHours(1) },
+            () => "abc123", _log);
+        await _service.StartAsync(CancellationToken.None);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        _link.RequestRefresh();
+        _link.Connected = true;
+
+        Assert.StartsWith("""{"Type":"Telemetry""", await ReadAsync());
     }
 
     [Fact]

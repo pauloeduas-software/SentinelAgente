@@ -34,7 +34,8 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
 - **Rodar de verdade é com sudo:** serial e UUID do DMI são só do root.
 - **Comando é lista fechada:** `SHUTDOWN`, `REBOOT` e `SUSPEND`, cada um com um executável fixo e sem shell.
   O resto é recusado e vai para o log, e o resultado do `systemctl` também; os bloqueios do logind valem (A5, A18).
-  A lista não cresce (A23).
+  A lista não cresce (A23). O `REFRESH` não é comando de sistema: a conexão o trata, e ele só faz o agente mandar
+  o handshake e a telemetria na hora (A26).
 - **Handshake primeiro, em toda conexão, e de novo uma vez por dia:** sem ele o comando não chega, e ele leva
   a versão do agente (A25).
 - **Endereço e segredos vêm da configuração, nunca do código:** `wss://` obrigatório (`ws://` só em
@@ -55,13 +56,13 @@ Decidido; não proponha de novo:
 - camuflagem de processo, proteção do binário e o driver de kernel `AssetManager.Shield` (A6);
 - buffer offline da telemetria, enquanto ela for de hora em hora (A17);
 - `LoggedOnUser` no handshake (A8);
-- comandos de terminal e ações novas além das três de energia (A23);
+- comandos de terminal e ações de sistema novas além das três de energia (A23);
 - `InstalledSoftware`, `Network` e `TopProcesses` antes de o SentinelWeb guardar e mostrar (A24);
 - `Infra/` e `Modules/`, ou `Core`/`Linux`/`Worker` em projetos separados (A2).
 
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A26`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A27`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".

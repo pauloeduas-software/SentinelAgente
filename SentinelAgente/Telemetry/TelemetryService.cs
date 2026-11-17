@@ -6,7 +6,8 @@ namespace SentinelAgente.Telemetry;
 /// <summary>
 /// A amostra de hora em hora (A12). A primeira vai quando a conexão sobe pela
 /// primeira vez, para a tela não passar uma hora vazia; dali em diante, uma por
-/// hora, com ou sem conexão.
+/// hora, com ou sem conexão. O pedido do servidor (A26) manda uma na hora, sem
+/// mexer no relógio da hora.
 /// </summary>
 /// <remarks>
 /// Sem conexão, a amostra é descartada (A17): a leitura anterior avança do mesmo
@@ -27,21 +28,35 @@ internal sealed partial class TelemetryService(
     {
         try
         {
+            // O pedido é olhado ANTES de cada espera e de cada envio: o que chegasse
+            // enquanto a amostra sai, ou antes de a conexão ser notada, se perderia, e o
+            // servidor esperaria a amostra à toa. O que chega no meio manda outra, e vale.
+            var refresh = link.RefreshRequested;
             while (!link.IsConnected) await Task.Delay(timings.ConnectedPoll, stoppingToken);
 
             // O HWID com que a conexão se apresentou: a amostra vai com o mesmo.
             var id = hwid();
 
-            // A leitura de partida: a CPU precisa de uma anterior para a média.
+            // A leitura de partida: a CPU precisa de uma anterior para a média. O
+            // pedido do servidor encurta a janela: a média fica mais curta, e vale.
             Collect();
-            await Task.Delay(timings.FirstWindow, stoppingToken);
+            await Task.WhenAny(Task.Delay(timings.FirstWindow, stoppingToken), refresh);
+            stoppingToken.ThrowIfCancellationRequested();
 
+            // O tique fica de uma volta para a outra: o PeriodicTimer aceita uma espera
+            // por vez, e a volta que o pedido acordou deixa a dele pendente.
             using var timer = new PeriodicTimer(timings.Interval);
-            do
+            var tick = timer.WaitForNextTickAsync(stoppingToken).AsTask();
+            while (true)
             {
+                refresh = link.RefreshRequested;
                 await SendSampleAsync(id, stoppingToken);
+
+                var woke = await Task.WhenAny(tick, refresh);
+                if (woke != tick) continue;
+                if (!await tick) return;
+                tick = timer.WaitForNextTickAsync(stoppingToken).AsTask();
             }
-            while (await timer.WaitForNextTickAsync(stoppingToken));
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {

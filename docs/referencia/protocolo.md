@@ -166,6 +166,20 @@ confere a cada 60 s.
   `reboot` e `suspend`, sem shell, e recusa qualquer outra `Action`. Ele dispara e volta; o log diz, com o
   `CommandId`, se o systemd aceitou ou o motivo da recusa (bloqueio do logind, máquina que não suspende).
 
+## O pedido de dados agora (`REFRESH`)
+
+```json
+{ "Type": "Command", "Payload": { "Action": "REFRESH", "CommandId": "9a2e…" } }
+```
+
+- O servidor manda pelo Atualizar agora da ficha e da lista de Agentes, de quem é **Técnico** ou acima
+  ([DK](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#dk--atualizar-agora-a-máquina-manda-o-inventário-e-a-telemetria-na-hora)), e só ao agente 0.2.0 ou mais novo: o anterior recebe a recusa no painel e o pedido não sai.
+- **Há resposta:** o agente manda o `Handshake`, com o inventário relido, e uma `Telemetry` na hora. O servidor
+  espera as duas gravadas, por até 15 s, antes de dizer "Máquina atualizada.".
+- **Do lado do agente** ([A26](../decisoes/protocolo.md#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel)): a conexão trata o pedido, e ele não chega ao
+  `PowerCommands`. O `IServerLink.RefreshRequested` avisa a telemetria, que manda a amostra sem mexer no relógio
+  da hora.
+
 ## Quando a conexão fecha
 
 - **O servidor encerrando** fecha todas as conexões com o código 1001 ("Servidor encerrando"): o agente

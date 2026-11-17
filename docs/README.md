@@ -40,7 +40,7 @@ Campo, mensagem ou comando novo começa no servidor.
 
 1. **Decida a zona pela regra**, não pelo assunto. "Como fazer X" nunca vai em `referencia/`.
 2. **Auditoria e revisão não ganham arquivo.** Elas atualizam o documento que revisaram.
-3. **Decisão nova continua a numeração** (a próxima é a `A26`) e entra no arquivo do assunto que ela governa.
+3. **Decisão nova continua a numeração** (a próxima é a `A27`) e entra no arquivo do assunto que ela governa.
    Se ela corrige uma anterior, a antiga ganha `> **Superada por…**` logo abaixo do título, e a tabela de
    supersessões do [`decisoes/README.md`](./decisoes/README.md) cresce.
 4. **Um fato, um lugar.** Se precisar repetir, cite. O que já está escrito no SentinelWeb — as decisões dele,

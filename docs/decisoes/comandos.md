@@ -95,6 +95,8 @@ auditoria do servidor.
 
 ## A23 — A lista fica nas três ações, e o terminal não entra
 
+> **Superada em parte por [A26](./protocolo.md#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel):** o pedido de inventário na hora volta, tratado pela conexão e fora da lista dos comandos de sistema.
+
 **Decidido** (2026-11-15), corrigindo em parte a [A5](#a5--comando-é-lista-fechada-sem-shell):
 - **O agente fica com `SHUTDOWN`, `REBOOT` e `SUSPEND`**, e a lista não cresce. Outra `Action` continua
   recusada e no log, como na A5.

@@ -26,10 +26,13 @@ public sealed partial class AgentConnection(
     private ServerCertificate? _certificate;
     private Enrollment? _enrollment;
     private volatile Session? _session;
+    private TaskCompletionSource _refresh = NewRefresh();
 
     private enum Outcome { Served, Failed, Unauthorized }
 
     public bool IsConnected => _session is not null;
+
+    public Task RefreshRequested => Volatile.Read(ref _refresh).Task;
 
     public async Task<bool> TrySendAsync(OutgoingMessage message, CancellationToken cancellationToken)
     {
@@ -300,6 +303,7 @@ public sealed partial class AgentConnection(
 
             var message = Messages.Read(buffer.AsSpan(0, count));
             if (message is null) LogUnreadable(count);
+            else if (message.Command is { Action: Messages.RefreshAction } refresh) await RefreshAsync(session, refresh, cancellationToken);
             else if (message.Command is { } command) await HandleCommandAsync(command, cancellationToken);
             else LogUnexpectedType(message.Type);
         }
@@ -318,6 +322,30 @@ public sealed partial class AgentConnection(
             LogCommandFailed(e, command.Action, command.CommandId);
         }
     }
+
+    /// <summary>
+    /// O pedido de dados agora (A26): o handshake com o inventário relido, como o
+    /// reenvio diário, e o aviso a quem manda dado (a telemetria), que manda a
+    /// amostra na hora. Não roda programa nenhum: só lê o que o handshake já lê.
+    /// </summary>
+    private async Task RefreshAsync(Session session, CommandPayload command, CancellationToken cancellationToken)
+    {
+        LogRefreshRequested(command.CommandId);
+        try
+        {
+            var hello = await handshake.CreateAsync(cancellationToken);
+            await session.SendAsync(Messages.CreateHandshake(hello), cancellationToken);
+        }
+        catch (Exception e) when (e is not (OperationCanceledException or WebSocketException or ObjectDisposedException))
+        {
+            // A leitura que falhou não derruba a conexão, como no reenvio diário: o
+            // servidor diz a quem pediu que a máquina não respondeu.
+            LogRefreshFailed(command.CommandId, e.Message);
+        }
+        Interlocked.Exchange(ref _refresh, NewRefresh()).TrySetResult();
+    }
+
+    private static TaskCompletionSource NewRefresh() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private async Task PingWhenIdleAsync(Session session, string hwid, CancellationToken cancellationToken)
     {
@@ -507,6 +535,12 @@ public sealed partial class AgentConnection(
 
     [LoggerMessage(LogLevel.Error, "O comando {Action} ({CommandId}) falhou.")]
     private partial void LogCommandFailed(Exception exception, string action, string commandId);
+
+    [LoggerMessage(LogLevel.Information, "O servidor pediu os dados agora ({CommandId}).")]
+    private partial void LogRefreshRequested(string commandId);
+
+    [LoggerMessage(LogLevel.Warning, "O inventário pedido pelo servidor ({CommandId}) não foi montado: {Reason}.")]
+    private partial void LogRefreshFailed(string commandId, string reason);
 
     [LoggerMessage(LogLevel.Warning, "Mensagem do servidor descartada: {Bytes} bytes fora do protocolo.")]
     private partial void LogUnreadable(int bytes);

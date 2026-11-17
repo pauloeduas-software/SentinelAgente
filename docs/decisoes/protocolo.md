@@ -6,7 +6,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15, A16, A20 e A22.
+> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22, A24, A25 e A26.
 
 ---
 
@@ -557,6 +557,8 @@ programas, e uma amostra de minuto em minuto para a rede e os processos.
 
 ## A25 — O handshake leva a versão do agente, e vai de novo uma vez por dia
 
+> **Superada em parte por [A26](#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel):** o pedido de inventário na hora, que o painel agora faz.
+
 **Decidido** (2026-11-16, junto com a DD e a DE do SentinelWeb):
 
 - **O handshake leva `AgentVersion`:** a `<Version>` do csproj, a do pacote .deb, sem o `+commit` que o SDK põe na
@@ -584,4 +586,30 @@ inventário só a cada conexão).
   reenvio diário cobre o caso.
 - **O sorteio do horário do reenvio,** como o do `Ping`: a frota que reconecta junto reenvia junto 24 horas depois, e
   um handshake por máquina por dia não pesa no servidor.
+
+---
+
+## A26 — O `REFRESH` manda o inventário e a telemetria na hora, a pedido do painel
+
+**Decidido** (2026-11-17, junto com a [DK](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#dk--atualizar-agora-a-máquina-manda-o-inventário-e-a-telemetria-na-hora) do SentinelWeb):
+
+- **O servidor manda o `Command` com a `Action` `REFRESH`,** e o agente responde com o handshake, o inventário relido
+  como no reenvio diário, e com uma amostra de telemetria na hora. É a conexão que trata o pedido, e ele nunca chega
+  ao `ICommandHandler`: não roda programa nenhum, só lê o que o handshake e a telemetria já leem.
+- **A conexão avisa a telemetria pelo `IServerLink.RefreshRequested`,** uma tarefa que cada pedido completa e troca. A
+  telemetria espera por ela junto com o relógio da hora, que não muda; o pedido na janela de partida encurta a janela,
+  e a média da primeira amostra fica mais curta.
+- **A versão sobe para 0.2.0.** O SentinelWeb compara a `AgentVersion` e não manda o `REFRESH` ao agente anterior, que o
+  recusaria no log.
+
+**Supera em parte:** [A23](./comandos.md#a23--a-lista-fica-nas-três-ações-e-o-terminal-não-entra) (pedir o inventário
+na hora, descartado ali) e [A25](#a25--o-handshake-leva-a-versão-do-agente-e-vai-de-novo-uma-vez-por-dia) (o
+"inventariar agora" descartado).
+
+**Por quê:** a A23 o descartou porque o painel não tinha pedido e não saberia se ele rodou. O painel pediu,
+comparando Agentes com o GLPI ("Request inventory"), o Fleet ("Refetch") e o Intune ("Sync"), e a resposta é o próprio
+handshake: o SentinelWeb espera por ele e pela telemetria antes de dizer "Máquina atualizada.". A preocupação da A23
+com mais um jeito de mandar como root não se aplica: o pedido só faz o agente ler e mandar.
+
+**O que não muda:** a lista fechada dos comandos de sistema continua com as três ações de energia (A23).
 

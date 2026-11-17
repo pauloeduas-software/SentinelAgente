@@ -27,6 +27,12 @@ public static class Messages
     public const string Ping = "Ping";
     public const string Command = "Command";
 
+    /// <summary>
+    /// A ação que pede os dados agora (A26): a conexão a trata, e ela nunca chega ao
+    /// <c>ICommandHandler</c>, porque não roda nada na máquina.
+    /// </summary>
+    public const string RefreshAction = "REFRESH";
+
     public static OutgoingMessage CreateHandshake(HandshakePayload payload) =>
         new(Handshake, JsonSerializer.SerializeToUtf8Bytes(
             new Envelope<HandshakePayload>(Handshake, payload), ProtocolJson.Default.EnvelopeHandshakePayload));

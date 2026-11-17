@@ -4,7 +4,8 @@ namespace SentinelAgente.Connection;
 
 // As três pontas que ligam a conexão às funções sem que ela as conheça: o
 // Inventory implementa a apresentação, o Commands recebe os comandos, e quem
-// manda dado (a telemetria) usa o IServerLink.
+// manda dado (a telemetria) usa o IServerLink, que também avisa quando o servidor
+// pede os dados agora.
 
 /// <summary>Monta a apresentação da máquina, a cada conexão.</summary>
 public interface IHandshakeSource
@@ -35,4 +36,11 @@ public interface IServerLink
     /// fazer com o dado. Só lança quando quem chamou cancela.
     /// </summary>
     Task<bool> TrySendAsync(OutgoingMessage message, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Completa quando o servidor pede os dados agora (<c>REFRESH</c>, A26). Cada
+    /// pedido completa a tarefa da vez e põe outra no lugar: quem espera relê a
+    /// propriedade a cada volta, e a tarefa abandonada não consome pedido nenhum.
+    /// </summary>
+    Task RefreshRequested { get; }
 }
