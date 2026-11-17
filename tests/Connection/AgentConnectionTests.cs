@@ -47,6 +47,7 @@ public sealed class AgentConnectionTests : IAsyncLifetime
         var payload = first.RootElement.GetProperty("Payload");
         Assert.Equal("abc123", payload.GetProperty("Hwid").GetString());
         Assert.Equal("pc-teste", payload.GetProperty("Hostname").GetString());
+        Assert.Equal("0.2.0", payload.GetProperty("AgentVersion").GetString());
         Assert.False(payload.TryGetProperty("CpuModel", out _), "campo nulo não vai para o fio");
         Assert.True(await EventuallyAsync(() => connection.IsConnected));
     }
@@ -173,7 +174,22 @@ public sealed class AgentConnectionTests : IAsyncLifetime
         await server.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, "HWID diferente do token", TestContext.Current.CancellationToken);
 
         Assert.True(await EventuallyAsync(() => _log.Lines.Any(line =>
-            line.Contains("recusou o HWID abc123") && line.Contains(EnrollSecretFile))));
+            line.Contains("recusou o HWID abc123 (HWID diferente do token)") && line.Contains(EnrollSecretFile))));
+        Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("Nova tentativa em 00:00:00.2"))));
+    }
+
+    [Fact]
+    public async Task A_maquina_excluida_no_servidor_diz_o_motivo_no_log_e_espera_o_teto()
+    {
+        _hub = await StartHubAsync();
+        await StartAsync(_hub.Url);
+        var server = await ReadAsync(_hub.Accepted);
+        await ReadAsync(_hub.Received);
+
+        // O Excluir de Agentes apaga a credencial e fecha a conexão com 1008 (DD de lá).
+        await server.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, "Máquina excluída", TestContext.Current.CancellationToken);
+
+        Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("(Máquina excluída)"))));
         Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("Nova tentativa em 00:00:00.2"))));
     }
 
@@ -222,6 +238,39 @@ public sealed class AgentConnectionTests : IAsyncLifetime
 
         Assert.Equal("Ping", ping.RootElement.GetProperty("Type").GetString());
         Assert.Equal("abc123", ping.RootElement.GetProperty("Payload").GetProperty("Hwid").GetString());
+    }
+
+    [Fact]
+    public async Task Manda_o_handshake_de_novo_a_cada_intervalo_na_mesma_conexao()
+    {
+        _hub = await StartHubAsync();
+        await StartAsync(_hub.Url, Fast with { InventoryInterval = TimeSpan.FromMilliseconds(150) });
+        var server = await ReadAsync(_hub.Accepted);
+        await ReadAsync(_hub.Received);
+
+        using var again = JsonDocument.Parse(await ReadAsync(_hub.Received));
+
+        Assert.Equal("Handshake", again.RootElement.GetProperty("Type").GetString());
+        Assert.Equal("abc123", again.RootElement.GetProperty("Payload").GetProperty("Hwid").GetString());
+        // A mesma conexão: o reenvio não reconecta.
+        Assert.False(_hub.Accepted.Reader.TryRead(out _));
+        Assert.Equal(WebSocketState.Open, server.State);
+    }
+
+    [Fact]
+    public async Task A_leitura_que_falha_no_reenvio_nao_para_o_reenvio_seguinte()
+    {
+        _hub = await StartHubAsync();
+        await StartAsync(_hub.Url, Fast with { InventoryInterval = TimeSpan.FromMilliseconds(150) }, handshake: new FailsOnFirstResend());
+        var server = await ReadAsync(_hub.Accepted);
+        await ReadAsync(_hub.Received);
+
+        // A leitura do primeiro reenvio falha (a 1ª é a do arranque, a 2ª a da conexão); o seguinte chega na mesma conexão.
+        using var again = JsonDocument.Parse(await ReadAsync(_hub.Received));
+
+        Assert.Equal("Handshake", again.RootElement.GetProperty("Type").GetString());
+        Assert.False(_hub.Accepted.Reader.TryRead(out _));
+        Assert.Equal(WebSocketState.Open, server.State);
     }
 
     [Fact]
@@ -325,7 +374,17 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     private sealed class FixedHandshake : IHandshakeSource
     {
         public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new HandshakePayload { Hwid = "abc123", Hostname = "pc-teste", OsVersion = "Ubuntu 24.04" });
+            ValueTask.FromResult(new HandshakePayload { Hwid = "abc123", Hostname = "pc-teste", OsVersion = "Ubuntu 24.04", AgentVersion = "0.2.0" });
+    }
+
+    private sealed class FailsOnFirstResend : IHandshakeSource
+    {
+        private int _calls;
+
+        public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) =>
+            Interlocked.Increment(ref _calls) == 3
+                ? throw new InvalidOperationException("Leitura que falhou.")
+                : new FixedHandshake().CreateAsync(cancellationToken);
     }
 
     private sealed class FailingHandshake : IHandshakeSource

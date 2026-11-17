@@ -159,6 +159,7 @@ public sealed partial class AgentConnection(
 
             using var sessionEnd = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
             var pinger = PingWhenIdleAsync(session, hello.Hwid, sessionEnd.Token);
+            var inventory = ResendHandshakeDailyAsync(session, sessionEnd.Token);
 
             try
             {
@@ -169,15 +170,18 @@ public sealed partial class AgentConnection(
             {
                 await sessionEnd.CancelAsync();
                 await pinger;
+                await inventory;
             }
 
-            // O servidor fecha com 1008 quando o HWID do handshake não é o do
-            // token: o arquivo do HWID foi apagado ou trocado depois do cadastro
-            // (A20), ou o token veio de outra instalação. Tentar de novo dá no
-            // mesmo, e só o recadastro conserta (A11).
+            // O servidor fecha com 1008 quando o token não vale mais para esta
+            // máquina: o HWID do handshake não é o do token (o arquivo do HWID foi
+            // apagado ou trocado depois do cadastro, A20, ou o token veio de outra
+            // instalação), ou a máquina foi excluída no SentinelWeb. O motivo vem
+            // no fechamento, e vai para o log. Tentar de novo dá no mesmo, e só o
+            // recadastro conserta (A11).
             if (session.Socket.CloseStatus == WebSocketCloseStatus.PolicyViolation)
             {
-                LogHwidRefused(hello.Hwid, _options.EnrollSecretFile);
+                LogRefused(hello.Hwid, session.Socket.CloseStatusDescription ?? "sem motivo", _options.EnrollSecretFile);
                 return Outcome.Unauthorized;
             }
             return Stable(session);
@@ -341,6 +345,37 @@ public sealed partial class AgentConnection(
         }
     }
 
+    /// <summary>
+    /// O handshake de novo, uma vez por dia, com o inventário relido (A25). Na
+    /// mesma conexão: o servidor só atualiza a máquina, e o vínculo dela fica.
+    /// </summary>
+    private async Task ResendHandshakeDailyAsync(Session session, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (true)
+            {
+                await Task.Delay(timings.InventoryInterval, cancellationToken);
+                try
+                {
+                    var hello = await handshake.CreateAsync(cancellationToken);
+                    await session.SendAsync(Messages.CreateHandshake(hello), cancellationToken);
+                }
+                catch (Exception e) when (e is not (OperationCanceledException or WebSocketException or ObjectDisposedException))
+                {
+                    // A leitura que falhou hoje não derruba a conexão: amanhã tenta de novo.
+                    // Qualquer falha, e não só a de IO: a que escapasse daqui pararia o
+                    // reenvio em silêncio e derrubaria o serviço no fim da conexão.
+                    LogInventoryFailed(e.Message);
+                }
+            }
+        }
+        catch (Exception e) when (e is OperationCanceledException or WebSocketException or ObjectDisposedException)
+        {
+            // A sessão acabou; quem decide reconectar é a recepção.
+        }
+    }
+
     private TimeSpan NextPingInterval() =>
         timings.PingIntervalMin + (timings.PingIntervalMax - timings.PingIntervalMin) * Random.Shared.NextDouble();
 
@@ -456,9 +491,13 @@ public sealed partial class AgentConnection(
     private partial void LogFatal(Exception exception);
 
     [LoggerMessage(LogLevel.Error,
-        "O servidor recusou o HWID {Hwid}: o token desta máquina foi emitido para outro. " +
-        "O arquivo do HWID foi apagado ou trocado, ou o token veio de outra instalação; para cadastrar de novo, ponha o segredo de instalação em {EnrollSecretFile}.")]
-    private partial void LogHwidRefused(string hwid, string enrollSecretFile);
+        "O servidor recusou o HWID {Hwid} ({Reason}): o token não vale mais para esta máquina. " +
+        "Ela foi excluída no SentinelWeb, o arquivo do HWID foi apagado ou trocado, ou o token veio de outra instalação; " +
+        "para cadastrar de novo, ponha o segredo de instalação em {EnrollSecretFile}.")]
+    private partial void LogRefused(string hwid, string reason, string enrollSecretFile);
+
+    [LoggerMessage(LogLevel.Warning, "O inventário do dia não foi montado: {Reason}. Vai de novo amanhã.")]
+    private partial void LogInventoryFailed(string reason);
 
     [LoggerMessage(LogLevel.Information, "Nova tentativa em {Delay}.")]
     private partial void LogRetrying(TimeSpan delay);

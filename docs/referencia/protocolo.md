@@ -41,8 +41,8 @@ Authorization: Bearer <AGENT_ENROLL_SECRET>
 | `409` | a máquina está conectada com outro token: o recadastro não toma o lugar dela |
 | `422` | o corpo sem `Hwid` |
 
-O teto é de 20 cadastros por minuto por IP. Revogar é do servidor (`bun run agente:revogar <hwid>`), e a
-conexão já aberta só cai quando ele reinicia.
+O teto é de 20 cadastros por minuto por IP. Revogar é excluir a máquina em Agentes, no SentinelWeb
+([DD](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#dd--agentes-ganha-sumidos-e-o-excluir-e-o-excluir-revoga-o-agente)): o token deixa de valer e a conexão aberta fecha com 1008.
 
 ---
 
@@ -63,14 +63,16 @@ conexão já aberta só cai quando ele reinicia.
 
 ## Handshake
 
-**Sempre a primeira mensagem de cada conexão.** É nele que o servidor liga aquela conexão ao HWID: sem ele, a
+**Sempre a primeira mensagem de cada conexão, e de novo uma vez por dia com a conexão de pé**
+([A25](../decisoes/protocolo.md#a25--o-handshake-leva-a-versão-do-agente-e-vai-de-novo-uma-vez-por-dia)). É nele que o servidor liga aquela conexão ao HWID: sem ele, a
 telemetria até é gravada, mas o comando não chega, e a tela responde que o agente não está conectado (409).
 É também ele que cria a máquina: telemetria de HWID que nunca mandou handshake é descartada.
 
 | Campo | O servidor | Onde o Linux guarda |
 |---|---|---|
 | `Hwid` | a chave da conexão (`endpoints.hwid`, único); HWID nunca visto com o serial e o UUID de uma máquina desligada herda a linha dela ([CV](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#cv--a-máquina-reinstalada-herda-a-própria-linha-como-no-glpi)) | um UUID sorteado na instalação e guardado em `/var/lib/sentinel-agent/hwid` (`Identity/Hwid.cs`, [A20](../decisoes/protocolo.md#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi)) |
-| `Hostname` | o nome da máquina na tela; sinal `HOSTNAME` da reconciliação. Ausente vira "desconhecido" | `/proc/sys/kernel/hostname`, sem o domínio |
+| `Hostname` | o nome da máquina na tela; só vira dica de vínculo no SentinelWeb, nunca vínculo. Ausente vira "desconhecido" | `/proc/sys/kernel/hostname`, sem o domínio |
+| `AgentVersion` | a lista de Agentes e a aba Máquina mostram (`endpoints.agentVersion`, [DE](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#de--a-lista-de-agentes-mostra-a-versão-do-agente)). Ausente apaga a gravada: é o agente anterior à A25 | a `<Version>` do csproj, sem o `+commit` do SDK (`Inventory/AgentVersion.cs`); vai sempre |
 | `OsVersion` | a aba Máquina mostra. Ausente vira "desconhecido" | `/etc/os-release`, `NAME VERSION_ID` (sem `NAME`, "Linux"; versão que é data de snapshot não vai); vai sempre |
 | `CpuModel` | a aba Máquina mostra | `/proc/cpuinfo` (`model name`); no ARM, não vai |
 | `MacAddress` | a aba Máquina mostra | `/sys/class/net/<placa>/address` da placa da rota padrão de menor métrica, com o túnel de VPN para trás ([A15](../decisoes/protocolo.md#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo)) |
@@ -86,8 +88,8 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 - **O servidor não compara mais um handshake com o anterior:** a mudança de hardware (`AssetChange`) saiu, com
   a memória total ([DA](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#da--o-que-o-agente-manda-vai-para-a-aba-máquina-e-o-que-ninguém-lê-sai)).
 - **Do lado do agente** ([A14](../decisoes/protocolo.md#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera)):
-  quem monta é o `Inventory/MachineInventory.cs`, relido a cada conexão, na forma que só muda quando a máquina
-  muda.
+  quem monta é o `Inventory/MachineInventory.cs`, relido a cada conexão e a cada reenvio diário, na forma que só
+  muda quando a máquina muda.
 - **O que o servidor não lê, ele ignora sem erro**, e o agente não manda: nem o `RamTotalBytes` nem o
   `InstalledSoftware` do protocolo ([A24](../decisoes/protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem)), nem o usuário logado
   ([A8](../decisoes/escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado)).
@@ -172,8 +174,10 @@ confere a cada 60 s.
   máquina já a tenha substituído.
 - **O HWID do handshake diferente do token** o servidor fecha com o código 1008 ("HWID diferente do token")
   ([CU](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/acesso.md#cu--a-conexão-com-o-hwid-de-outra-máquina-fecha-com-1008)):
-  o arquivo do HWID foi apagado ou trocado depois do cadastro (A20), ou o token veio de outra instalação. O agente diz isso no log,
-  espera o teto e não se recadastra sozinho; o recadastro é pôr o segredo de instalação de novo.
+  o arquivo do HWID foi apagado ou trocado depois do cadastro (A20), ou o token veio de outra instalação.
+- **A máquina excluída em Agentes** o servidor fecha com 1008 ("Máquina excluída", [DD](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#dd--agentes-ganha-sumidos-e-o-excluir-e-o-excluir-revoga-o-agente)), e a
+  reconexão leva 401. Nos dois 1008, o agente põe o motivo do servidor no log, espera o teto e não se recadastra
+  sozinho; o recadastro é pôr o segredo de instalação de novo.
 - **Do lado do agente** (`Connection/AgentConnection.cs`): a conexão que cai antes de 1 minuto conta como falha,
   e a espera seguinte dobra. O erro que não se conserta tentando de novo (a máquina sem HWID, o `CaFile`
   ilegível) para o serviço com código de saída 1, e o systemd vê a falha.

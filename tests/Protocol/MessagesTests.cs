@@ -13,11 +13,12 @@ public sealed class MessagesTests
             Hwid = "abc123",
             Hostname = "pc-01",
             OsVersion = "Ubuntu 24.04",
+            AgentVersion = "0.2.0",
             CpuModel = "Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz",
         });
 
         Assert.Equal(
-            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Ubuntu 24.04","CpuModel":"Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz"}}""",
+            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Ubuntu 24.04","AgentVersion":"0.2.0","CpuModel":"Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz"}}""",
             Encoding.UTF8.GetString(message.Json.Span));
     }
 
@@ -29,11 +30,12 @@ public sealed class MessagesTests
             Hwid = "abc123",
             Hostname = "pc-01",
             OsVersion = "Fedora Linux 41",
+            AgentVersion = "0.2.0",
             Gpus = [new GpuPayload("GeForce MX150", null), new GpuPayload("Radeon RX 6600", 8_589_934_592)],
         });
 
         Assert.Equal(
-            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Fedora Linux 41",""" +
+            """{"Type":"Handshake","Payload":{"Hwid":"abc123","Hostname":"pc-01","OsVersion":"Fedora Linux 41","AgentVersion":"0.2.0",""" +
             """ "Gpus":[{"Name":"GeForce MX150"},{"Name":"Radeon RX 6600","MemoryBytes":8589934592}]}}""".TrimStart(),
             Encoding.UTF8.GetString(message.Json.Span));
     }

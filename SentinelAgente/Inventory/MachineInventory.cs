@@ -46,6 +46,7 @@ public sealed class MachineInventory : IHandshakeSource
             Hwid = Hwid,
             Hostname = Hostname(),
             OsVersion = OsRelease.Read(_root),
+            AgentVersion = Inventory.AgentVersion.Current,
             CpuModel = CpuInfo.Read(_root),
             MacAddress = network.MacAddress,
             LocalIp = network.LocalIp,

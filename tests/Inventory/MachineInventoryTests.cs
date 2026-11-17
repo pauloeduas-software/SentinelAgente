@@ -44,6 +44,7 @@ public sealed class MachineInventoryTests : IDisposable
             Hwid = TestHwid,
             Hostname = "nb-financeiro-07",
             OsVersion = "Ubuntu 24.04",
+            AgentVersion = AgentVersion.Current,
             CpuModel = "Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz",
             MacAddress = "a0:ce:c8:d1:e2:f3",
             LocalIp = "192.168.1.37",

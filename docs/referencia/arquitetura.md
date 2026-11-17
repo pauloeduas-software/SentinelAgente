@@ -41,7 +41,7 @@ SentinelAgente/
 │   ├── Connection/                # BASE. o WebSocket com o /agent-hub: token, handshake a cada conexão, reconexão
 │   ├── Protocol/                  # BASE. o envelope e as mensagens, espelho do agent-protocol.types.ts
 │   ├── Identity/                  # o HWID, sorteado na instalação (A20)
-│   ├── Inventory/                 # o que o handshake leva: nome, sistema, rede, serial, fabricante, placas de vídeo (A14, A22, A24)
+│   ├── Inventory/                 # o que o handshake leva: nome, sistema, rede, serial, fabricante, placas de vídeo, versão (A14, A22, A24, A25)
 │   ├── Telemetry/                 # a amostra periódica: um coletor por métrica
 │   │   ├── Cpu/
 │   │   ├── Memory/

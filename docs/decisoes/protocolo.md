@@ -265,6 +265,8 @@ então esta é a hora de fechar a conta.
 
 > **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `RamTotalBytes` sai do handshake; a RAM vai só na telemetria.
 
+> **Superada em parte por [A25](#a25--o-handshake-leva-a-versão-do-agente-e-vai-de-novo-uma-vez-por-dia):** o handshake vai de novo uma vez por dia, com a ficha relida, e leva a versão do agente.
+
 **Decidido** (2026-11-15): o handshake leva a ficha da máquina, relida a cada conexão
 (`Inventory/MachineInventory.cs`), com estas regras:
 
@@ -550,3 +552,36 @@ programas, e uma amostra de minuto em minuto para a rede e os processos.
   ausente, até sair de lá também.
 - **A volta começa no SentinelWeb:** o servidor guarda e mostra, e o agente passa a mandar. O código que saiu está
   no `git log`, no formato do GLPI.
+
+---
+
+## A25 — O handshake leva a versão do agente, e vai de novo uma vez por dia
+
+**Decidido** (2026-11-16, junto com a DD e a DE do SentinelWeb):
+
+- **O handshake leva `AgentVersion`:** a `<Version>` do csproj, a do pacote .deb, sem o `+commit` que o SDK põe na
+  versão informativa (`Inventory/AgentVersion.cs`). Vai sempre. O SentinelWeb grava em `endpoints.agentVersion` e
+  mostra na lista de Agentes e na aba Máquina ([DE](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#de--a-lista-de-agentes-mostra-a-versão-do-agente)).
+- **Com a conexão de pé, o handshake vai de novo a cada 24 horas**, com o inventário relido
+  (`ConnectionTimings.InventoryInterval`). Na mesma conexão: o servidor só atualiza a máquina. A leitura que falha
+  vai para o log e tenta no dia seguinte, sem derrubar a conexão.
+- **O 1008 leva o motivo do servidor para o log.** Ele fechava só pelo HWID diferente do token, e agora fecha
+  também a máquina excluída em Agentes ([DD](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#dd--agentes-ganha-sumidos-e-o-excluir-e-o-excluir-revoga-o-agente)); o log dizia sempre "HWID".
+
+**Supera em parte:** [A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera) (o
+inventário só a cada conexão).
+
+**Por quê:**
+- **A versão serve para achar quem ficou com o agente velho** depois de uma atualização: o GLPI, o Fleet e o
+  NinjaOne mostram a coluna. Sem ela, a única pista era o comportamento.
+- **Numa máquina sempre ligada, a conexão dura semanas,** e a memória trocada, o IP novo ou o nome mudado só
+  chegavam na próxima queda. O GLPI Agent manda o inventário uma vez por dia; o Intune tem o "Sync" para o mesmo
+  fim. O reenvio diário resolve sem ninguém lembrar de clicar.
+
+**Descartado:**
+- **Um comando "inventariar agora"** do painel: a lista de comandos fica nas três ações de energia
+  ([A23](./comandos.md#a23--a-lista-fica-nas-três-ações-e-o-terminal-não-entra)), e o
+  reenvio diário cobre o caso.
+- **O sorteio do horário do reenvio,** como o do `Ping`: a frota que reconecta junto reenvia junto 24 horas depois, e
+  um handshake por máquina por dia não pesa no servidor.
+

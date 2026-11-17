@@ -40,6 +40,14 @@ public sealed record ConnectionTimings
     public TimeSpan PingIntervalMin { get; init; } = TimeSpan.FromSeconds(30);
     public TimeSpan PingIntervalMax { get; init; } = TimeSpan.FromSeconds(60);
 
+    /// <summary>
+    /// De quanto em quanto a conexão de pé manda o handshake de novo, com o
+    /// inventário relido (A25): sem isso, a peça trocada e o IP novo só chegavam
+    /// na próxima reconexão, que numa máquina sempre ligada pode levar semanas.
+    /// Um dia, como o inventário do GLPI Agent.
+    /// </summary>
+    public TimeSpan InventoryInterval { get; init; } = TimeSpan.FromDays(1);
+
     /// <summary>Quanto o fechamento educado pode demorar quando o agente encerra.</summary>
     public TimeSpan CloseTimeout { get; init; } = TimeSpan.FromSeconds(5);
 }

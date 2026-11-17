@@ -35,7 +35,8 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
 - **Comando é lista fechada:** `SHUTDOWN`, `REBOOT` e `SUSPEND`, cada um com um executável fixo e sem shell.
   O resto é recusado e vai para o log, e o resultado do `systemctl` também; os bloqueios do logind valem (A5, A18).
   A lista não cresce (A23).
-- **Handshake primeiro, em toda conexão:** sem ele o comando não chega.
+- **Handshake primeiro, em toda conexão, e de novo uma vez por dia:** sem ele o comando não chega, e ele leva
+  a versão do agente (A25).
 - **Endereço e segredos vêm da configuração, nunca do código:** `wss://` obrigatório (`ws://` só em
   `localhost`), sem opção de desligar a verificação do certificado. Cada máquina tem o seu token, que o
   cadastro troca pelo segredo de instalação; o agente apaga o segredo e não se recadastra sozinho (A11).
@@ -61,6 +62,6 @@ Decidido; não proponha de novo:
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A25`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A26`).
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,
   um commit. Sem `Co-Authored-By` nem "Generated with".
