@@ -459,6 +459,8 @@ vista: a lista de fábrica e os valores repetidos em várias máquinas, que o ag
 ## A22 — Os programas e as placas de vídeo vão no handshake, como no GLPI, antes de o SentinelWeb guardar
 
 > **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `InstalledSoftware` sai, e o `Gpus` fica só com `Name` e `MemoryBytes`.
+>
+> **Superada em parte por [A28](#a28--a-memória-da-placa-de-vídeo-a-dedicada-vai-a-integrada-não):** a NVIDIA passa a ir com a memória, pelo `nvidia-smi`, e a AMD integrada vai sem.
 
 **Decidido** (2026-11-15): o handshake leva duas listas do inventário do GLPI Agent, lidas a cada conexão:
 
@@ -602,3 +604,47 @@ com mais um jeito de mandar como root não se aplica: o pedido só faz o agente 
 
 **O que não muda:** a lista fechada dos comandos de sistema continua com as três ações de energia (A23).
 
+---
+
+## A28 — A memória da placa de vídeo: a dedicada vai, a integrada não
+
+**Decidido** (2026-11-18): o `MemoryBytes` de cada placa segue uma regra só, a placa dedicada vai com a memória dela
+e a integrada vai sem, porque não tem memória própria.
+
+| Placa | `MemoryBytes` | De onde |
+|---|---|---|
+| AMD dedicada | vai | `mem_info_vram_total` do `amdgpu`, como antes |
+| NVIDIA com o driver fechado | vai | `/usr/bin/nvidia-smi --query-gpu=pci.bus_id,memory.total --format=csv,noheader,nounits`, casada pelo slot (`Inventory/NvidiaSmi.cs`) |
+| AMD integrada | não vai | o `amdgpu` mostra nela a reserva da BIOS; ela é reconhecida pelo sensor `vddnb` (`hwmon/*/in1_label`), que o driver só cria na integrada |
+| Intel integrada | não vai | não tem memória própria, e o `i915` não mostra a reserva |
+| NVIDIA com o `nouveau` | não vai | o driver não mostra a memória |
+
+O `nvidia-smi` só roda quando há uma placa NVIDIA, sem shell, com dez segundos para responder; sem ele, preso ou com
+erro, a placa vai sem memória.
+
+**Supera em parte:** [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar) (a NVIDIA sem memória).
+
+**Por quê:** mandar a memória de uma marca e não de outra parecia regra, e era só o arquivo que existia. Nos agentes
+de referência:
+- **O OCS Inventory** lê a memória da NVIDIA pelo mesmo `nvidia-smi --query-gpu=memory.total`
+  (`Backend/OS/Linux/Videos.pm`), e não lê a das outras. Aqui vai também o `pci.bus_id`: o OCS junta as linhas de
+  todas as placas num valor só.
+- **O GLPI Agent** manda a janela do PCI (`Generic/PCI/Videos.pm`), que a A22 já descartou, e procura a memória no log
+  do Xorg (`Linux/Videos.pm`), que o serviço não tem.
+- **No Windows** os dois têm um lugar só, o `HardwareInformation.qwMemorySize` do registro, que todo driver grava; no
+  Linux cada driver mostra a memória do seu jeito, ou não mostra.
+
+A integrada vai sem memória, e não com a reserva da BIOS que o Windows chama de dedicada: a reserva é RAM, que a
+telemetria já conta, e o número muda com a configuração da BIOS, não com a placa.
+
+**Descartado:**
+- **A NVML** (`libnvidia-ml.so`), que o `nvidia-smi` usa por baixo: o mesmo dado, com uma biblioteca carregada no
+  processo do agente em vez de um programa que termina.
+- **Reconhecer a AMD integrada pela lista de ids do PCI** ou pelo tamanho da reserva: a lista envelhece a cada
+  geração, e há placa dedicada pequena.
+
+**O que fica de fora, declarado:**
+- **A AMD integrada com o gerenciamento de energia desligado** (`amdgpu.dpm=0`) não tem o `hwmon`, e vai com a
+  reserva da BIOS.
+- **A Intel dedicada** (Arc) vai sem memória, como a integrada: o `i915` não mostra a dela.
+- **A NVIDIA com o driver fechado e sem o `nvidia-smi`** vai sem memória.

@@ -11,17 +11,22 @@ namespace SentinelAgente.Inventory;
 /// <remarks>
 /// "Navi 22 [Radeon RX 6700 XT]" vira o nome "Radeon RX 6700 XT", a mesma divisão
 /// do GLPI, e o chip fica de fora; sem colchete, o nome é o texto inteiro, e sem o
-/// <c>pci.ids</c>, o par fabricante:dispositivo. A memória é a VRAM que o <c>amdgpu</c> mostra: o GLPI
-/// manda o tamanho da janela do PCI, que é 256 MB numa placa de 8 GB, e a NVIDIA
-/// e a Intel não têm arquivo para ela. A resolução, que o GLPI tira do
+/// <c>pci.ids</c>, o par fabricante:dispositivo. A memória é a VRAM que o <c>amdgpu</c> mostra, e a
+/// da NVIDIA vem do <see cref="NvidiaSmi"/> (A28): o GLPI manda o tamanho da janela do PCI,
+/// que é 256 MB numa placa de 8 GB. A integrada, AMD ou Intel, vai sem memória: ela não tem
+/// memória própria. A resolução, que o GLPI tira do
 /// <c>xrandr</c>, não vai: o serviço não tem tela.
 /// </remarks>
 internal static class GpuInfo
 {
     private const string Devices = "sys/bus/pci/devices";
+    private const string Nvidia = "10de";
 
-    /// <summary>As placas, na ordem do slot; nenhuma, <c>null</c>.</summary>
-    public static IReadOnlyList<GpuPayload>? Read(SystemRoot root)
+    /// <summary>
+    /// As placas, na ordem do slot; nenhuma, <c>null</c>. A memória da NVIDIA, pelo
+    /// slot, só é pedida quando há uma placa dela.
+    /// </summary>
+    public static IReadOnlyList<GpuPayload>? Read(SystemRoot root, Func<IReadOnlyDictionary<string, long>> nvidiaMemory)
     {
         if (!root.HasDirectory(Devices)) return null;
 
@@ -34,6 +39,7 @@ internal static class GpuInfo
             if (Hex(root.ReadValue($"{Devices}/{address}/device")) is not { } device) continue;
 
             var vram = long.TryParse(root.ReadValue($"{Devices}/{address}/mem_info_vram_total"), out var bytes) && bytes > 0
+                && !Integrated(root, address)
                 ? bytes
                 : (long?)null;
             cards.Add((address, vendor, device, vram));
@@ -41,15 +47,32 @@ internal static class GpuInfo
 
         if (cards.Count == 0) return null;
         var ids = PciIds.Read(root, cards.Select(card => card.Vendor).ToHashSet());
+        var nvidia = cards.Any(card => card.Vendor == Nvidia && card.Vram is null)
+            ? nvidiaMemory()
+            : new Dictionary<string, long>();
 
         return cards
             .OrderBy(card => card.Address, StringComparer.Ordinal)
             .Select(card =>
             {
                 var pciId = $"{card.Vendor}:{card.Device}";
-                return new GpuPayload(Name(ids.Device(pciId)) ?? pciId, card.Vram);
+                var vram = card.Vram ?? (card.Vendor == Nvidia && nvidia.TryGetValue(card.Address, out var bytes) ? bytes : null);
+                return new GpuPayload(Name(ids.Device(pciId)) ?? pciId, vram);
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// A AMD integrada: o <c>amdgpu</c> mostra nela, como VRAM, o pedaço da RAM que a BIOS
+    /// reserva, e ela vai sem memória, como a Intel (A28). O sinal é o sensor <c>vddnb</c>,
+    /// que o driver só cria na integrada (<c>hwmon_attributes_visible</c>, no <c>amdgpu_pm.c</c>).
+    /// </summary>
+    private static bool Integrated(SystemRoot root, string address)
+    {
+        var hwmon = $"{Devices}/{address}/hwmon";
+        if (!root.HasDirectory(hwmon)) return false;
+        return Directory.EnumerateDirectories(root.Combine(hwmon))
+            .Any(sensor => root.ReadValue($"{hwmon}/{Path.GetFileName(sensor)}/in1_label") == "vddnb");
     }
 
     // "0x10DE" → "10de", a grafia do pci.ids.

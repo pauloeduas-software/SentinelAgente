@@ -31,10 +31,13 @@ public sealed class MachineInventoryTests : IDisposable
         ["br0"] = [Ip("10.10.0.5", 16)],
     };
 
+    // A máquina sem o nvidia-smi: o teste não roda programa nenhum.
+    private static IReadOnlyDictionary<string, long> NoNvidiaSmi() => new Dictionary<string, long>();
+
     private static InterfaceAddress Ip(string address, int prefix) => new(IPAddress.Parse(address), prefix);
 
     private HandshakePayload Read(string root) =>
-        new MachineInventory(root, name => Addresses.GetValueOrDefault(name) ?? [], _hwidFile).Create();
+        new MachineInventory(root, name => Addresses.GetValueOrDefault(name) ?? [], NoNvidiaSmi, _hwidFile).Create();
 
     [Fact]
     public void Monta_a_ficha_do_notebook()
@@ -220,7 +223,7 @@ public sealed class MachineInventoryTests : IDisposable
     [Fact]
     public void O_hwid_lido_uma_vez_vale_para_quem_mais_o_manda()
     {
-        var inventory = new MachineInventory(_directory, _ => [], _hwidFile);
+        var inventory = new MachineInventory(_directory, _ => [], NoNvidiaSmi, _hwidFile);
         var handshake = inventory.Create();
 
         // Apagado com o agente rodando, o arquivo não troca o HWID: a telemetria

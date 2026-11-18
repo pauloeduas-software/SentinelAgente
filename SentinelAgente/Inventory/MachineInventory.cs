@@ -16,15 +16,21 @@ public sealed class MachineInventory : IHandshakeSource
 {
     private readonly SystemRoot _root;
     private readonly Func<string, IReadOnlyList<InterfaceAddress>> _addressesOf;
+    private readonly Func<IReadOnlyDictionary<string, long>> _nvidiaMemory;
     private readonly Lazy<string> _hwid;
 
     internal MachineInventory()
-        : this("/", PrimaryNetwork.SystemAddresses, Identity.Hwid.DefaultFile) { }
+        : this("/", PrimaryNetwork.SystemAddresses, NvidiaSmi.Read, Identity.Hwid.DefaultFile) { }
 
-    internal MachineInventory(string root, Func<string, IReadOnlyList<InterfaceAddress>> addressesOf, string hwidFile)
+    internal MachineInventory(
+        string root,
+        Func<string, IReadOnlyList<InterfaceAddress>> addressesOf,
+        Func<IReadOnlyDictionary<string, long>> nvidiaMemory,
+        string hwidFile)
     {
         _root = new SystemRoot(root);
         _addressesOf = addressesOf;
+        _nvidiaMemory = nvidiaMemory;
         _hwid = new Lazy<string>(() => Identity.Hwid.ReadOrCreate(hwidFile));
     }
 
@@ -54,7 +60,7 @@ public sealed class MachineInventory : IHandshakeSource
             SystemUuid = dmi.SystemUuid,
             Manufacturer = dmi.Manufacturer,
             HardwareModel = dmi.HardwareModel,
-            Gpus = GpuInfo.Read(_root),
+            Gpus = GpuInfo.Read(_root, _nvidiaMemory),
         };
     }
 
