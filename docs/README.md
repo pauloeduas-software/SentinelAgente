@@ -8,7 +8,7 @@
 |---|---|---|
 | [`referencia/`](./referencia/) | **É verdade AGORA.** Mudou o código, muda aqui. Não conta história, não dá instrução. | o que o agente é: as pastas e o que cada uma guarda, e o protocolo com o SentinelWeb |
 | [`guias/`](./guias/) | **Começa com um verbo.** Receita para quem já sabe o que quer. | preparar o ambiente, instalar o agente |
-| [`decisoes/`](./decisoes/) | **Não se reescreve.** Se a realidade mudou, a decisão é *superada* por outra, com link entre as duas. | as decisões numeradas (`A1`…`A26`), um arquivo por assunto |
+| [`decisoes/`](./decisoes/) | **Não se reescreve.** Se a realidade mudou, a decisão é *superada* por outra, com link entre as duas. | as decisões numeradas (`A1`…`A27`), um arquivo por assunto |
 
 E um arquivo na raiz: este mapa.
 
@@ -40,7 +40,7 @@ Campo, mensagem ou comando novo começa no servidor.
 
 1. **Decida a zona pela regra**, não pelo assunto. "Como fazer X" nunca vai em `referencia/`.
 2. **Auditoria e revisão não ganham arquivo.** Elas atualizam o documento que revisaram.
-3. **Decisão nova continua a numeração** (a próxima é a `A27`) e entra no arquivo do assunto que ela governa.
+3. **Decisão nova continua a numeração** (a próxima é a `A28`) e entra no arquivo do assunto que ela governa.
    Se ela corrige uma anterior, a antiga ganha `> **Superada por…**` logo abaixo do título, e a tabela de
    supersessões do [`decisoes/README.md`](./decisoes/README.md) cresce.
 4. **Um fato, um lugar.** Se precisar repetir, cite.

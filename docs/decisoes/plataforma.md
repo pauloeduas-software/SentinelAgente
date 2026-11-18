@@ -5,7 +5,8 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A1–A3, A19 e A21 (a A3 superada em parte pela A19, e a A2 em parte pela A21).
+> Decisões neste arquivo: A1–A3, A19, A21 e A27 (a A3 superada em parte pela A19, e a A2 em parte pela A21 e
+> pela A27).
 
 ---
 
@@ -41,6 +42,9 @@ o que se pede do agente: serviço do systemd, `/proc` e `/sys`, WebSocket e os c
 >
 > **Superada em parte por [A22](./protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
 > a pasta `Telemetry/Gpu` sai; as placas de vídeo são lidas no `Inventory`.
+>
+> **Superada em parte por [A27](#a27--o-agente-para-windows-é-trabalho-futuro):** o Windows passa a trabalho
+> futuro declarado.
 
 **Decidido** (2026-11-13): um projeto (`SentinelAgente/`, na raiz do repositório, sem `src/`) com uma pasta por função direto na raiz dele —
 `Config`, `Connection`, `Protocol`, `Identity`, `Inventory`, `Telemetry`, `Commands` e `Service` —, e dentro de
@@ -207,3 +211,20 @@ com ele, se ele vier.
 `agent/svc.go`, ao lado das outras funções, e não numa pasta à parte; o GLPI Agent, no
 `lib/GLPI/Agent/Daemon.pm`, com uma pasta `Daemon/` só para o `Win32.pm`. Nos dois, e no Fleet, o que é
 do systemd fica com o systemd.
+
+---
+
+## A27 — O agente para Windows é trabalho futuro
+
+**Decidido** (2026-11-18), corrigindo em parte a [A2](#a2--um-projeto-com-uma-pasta-por-função): o Windows deixa
+de ser só o que "fica de fora" e passa a trabalho futuro declarado. **Nada muda no código agora:** o agente
+continua só Linux, o `.deb` continua o único pacote, e nenhuma pasta nem interface nasce à espera dele.
+
+**Por quê:**
+- **A maior parte das máquinas de uma empresa roda Windows**, e um agente só para Linux deixa fora do painel quase
+  todo o parque. Escrito como futuro, o buraco fica à vista, em vez de parecer escolha.
+- **A estrutura da A2 já comporta:** cada função é uma pasta, e o Windows ganha a sua versão de cada uma ao lado
+  da do Linux, como no Tactical RMM e no Fleet. A conexão, o protocolo e a configuração não dependem do sistema.
+
+**O que fica de fora, declarado:** como o agente será no Windows (o serviço, o pacote, de onde vem cada campo) é
+decisão para quando o trabalho começar.
