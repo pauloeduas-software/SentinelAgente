@@ -343,7 +343,10 @@ public sealed class AgentConnectionTests : IAsyncLifetime
 
         var options = Options.Create(new ServerOptions
         {
-            Url = url, TokenFile = TokenFile, EnrollSecretFile = EnrollSecretFile, CaFile = caFile,
+            Url = url,
+            TokenFile = TokenFile,
+            EnrollSecretFile = EnrollSecretFile,
+            CaFile = caFile,
         });
         var connection = new AgentConnection(options, handshake ?? new FixedHandshake(), _commands, timings ?? Fast, _log);
         _started.Add(connection);
