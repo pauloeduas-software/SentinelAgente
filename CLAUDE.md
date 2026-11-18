@@ -31,7 +31,8 @@ dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado n
 - **O HWID é o id da instalação:** um UUID sorteado no primeiro arranque e guardado em
   `/var/lib/sentinel-agent/hwid`, como o `agentid` do GLPI. Quem reconhece a máquina reinstalada é o SentinelWeb,
   pelo `BiosSerial` (o do produto, senão o da placa) e pelo `SystemUuid`; valor de fábrica vai nulo (A20).
-- **Rodar de verdade é com sudo:** serial e UUID do DMI são só do root.
+- **Rodar de verdade é com sudo:** o HWID e o token moram em `/var/lib/sentinel-agent`, só do root, e sem eles
+  o agente não sobe; serial e UUID do DMI também são só do root.
 - **Comando é lista fechada:** `SHUTDOWN`, `REBOOT` e `SUSPEND`, cada um com um executável fixo e sem shell.
   O resto é recusado e vai para o log, e o resultado do `systemctl` também; os bloqueios do logind valem (A5, A18).
   A lista não cresce (A23). O `REFRESH` não é comando de sistema: a conexão o trata, e ele só faz o agente mandar

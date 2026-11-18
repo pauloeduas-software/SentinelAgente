@@ -37,8 +37,9 @@ no primeiro contato e apaga o arquivo.
 
 ## Rodar o agente
 
-Com sudo: o serial e o UUID do firmware são só do root, e sem eles o agente não tem HWID. Em desenvolvimento,
-a linha de comando faz o papel do `/etc/sentinel-agent/agent.json`:
+Com sudo: o HWID mora em `/var/lib/sentinel-agent`, que é só do root, e sem ele o agente não sobe. O serial e
+o UUID do firmware também são só do root; sem eles o agente roda, mas o SentinelWeb não reconhece a máquina
+reinstalada. Em desenvolvimento, a linha de comando faz o papel do `/etc/sentinel-agent/agent.json`:
 
 ```bash
 echo "<AGENT_ENROLL_SECRET>" > /tmp/sentinel-secret && chmod 600 /tmp/sentinel-secret
