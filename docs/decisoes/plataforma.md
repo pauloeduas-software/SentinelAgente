@@ -5,8 +5,8 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A1–A3, A19, A21 e A27 (a A3 superada em parte pela A19, e a A2 em parte pela A21 e
-> pela A27).
+> Decisões neste arquivo: A1–A3, A19, A21 e A27 (a A3 superada em parte pela A19, e a A2 em parte pela A21,
+> pela A22 e pela A27).
 
 ---
 
