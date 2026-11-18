@@ -21,7 +21,7 @@
   conexão com 1008.
 - **Uma conexão por HWID.** A conexão nova da mesma máquina substitui a velha, e o fechamento da velha não
   derruba a máquina.
-- **Do lado do agente** ([A11](../decisoes/protocolo.md#a11--a-conexão-endereço-na-configuração-wss-e-token-que-só-o-root-lê)):
+- **Do lado do agente** ([A11](../decisoes/protocolo.md#a11--a-conexão-endereço-na-configuração-wss-e-um-token-por-máquina)):
   o endereço é o `Server:Url` de `/etc/sentinel-agent/agent.json`, só `wss://` (`ws://` em `localhost`). O
   segredo de instalação fica em `Server:EnrollSecretFile` até o cadastro, e o token, em `Server:TokenFile`
   (`/var/lib/sentinel-agent/token`), os dois com `chmod 600`. Quem faz isso é o `Connection/AgentConnection.cs`.
