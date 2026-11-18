@@ -48,6 +48,7 @@ SentinelAgente/
 │   │   └── Disk/
 │   └── Commands/                  # a lista fechada de ações e quem roda o systemctl (A5, A18)
 ├── tests/                         # as mesmas pastas do agente
+│   ├── Repository/                # o que vale para o repositório inteiro: os links da documentação
 │   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
 ├── packaging/                     # o .deb: a unidade do systemd, os scripts de instalar e remover e o build-deb.sh (A3, A19)
 └── docs/
