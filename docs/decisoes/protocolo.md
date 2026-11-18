@@ -29,9 +29,8 @@
 
 **Descartado:**
 - **O `/etc/machine-id`**, proposto no primeiro desenho desta estrutura: ele nasce na instalação do sistema, e
-  reinstalar a máquina daria outro HWID — o contrário do que o SentinelWeb assume
-  ([H](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#h--a-fusão-de-máquinas-sai):
-  "o hwid é derivado do hardware e estável entre reinstalações").
+  reinstalar a máquina daria outro HWID — o contrário do que o SentinelWeb assumia: o HWID
+  derivado do hardware e estável entre reinstalações.
 - **Trocar a conta por uma melhor** (o UUID primeiro, ou a lista de genéricos do SentinelWeb): qualquer
   mudança muda o HWID das máquinas já cadastradas, e cada uma vira uma linha nova em `endpoints`, sem o
   vínculo com o computador.
@@ -44,9 +43,8 @@ antigo sem o servidor perceber a troca.
 - **A máquina sem série válida não sobe**, como no antigo: sem o que derivar, o agente para com erro em vez de
   inventar uma identidade. Boa parte das máquinas virtuais cai aqui. Um segundo recurso (o UUID, só quando
   não há série) não muda o HWID de quem já sobe, e é decisão à parte.
-- **A lista de genéricos é menor que a do
-  [D46](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#d46--evidência-ambígua-é-evidência-zero)
-  do SentinelWeb:** falta `0123456789`, e as máquinas com essa série ganham todas o mesmo HWID. Corrigir muda
+- **A lista de genéricos é menor que a do SentinelWeb:** falta `0123456789`, e as máquinas com essa série ganham todas o
+  mesmo HWID. Corrigir muda
   o HWID delas, então também é decisão à parte.
 
 ---
@@ -99,7 +97,7 @@ e não tem tabela nem tela para isso. Guardar e mostrar começa lá. Se a lista 
 antigo, ou numa mensagem própria (ela é a parte mais pesada, e muda pouco), decide-se junto com o servidor.
 
 **O que fica de fora, declarado:** conformidade de licença (instalado × comprado), que o SentinelWeb tirou
-(decisão G) e não volta por esta decisão.
+e não volta por esta decisão.
 
 ---
 
@@ -115,9 +113,8 @@ antigo, ou numa mensagem própria (ela é a parte mais pesada, e muda pouco), de
   para outro endereço o agente não sobe. Não há opção que desligue a verificação do certificado.
 - **CA própria, opcional:** `Server:CaFile` aponta um PEM, e aí só essa CA vale, sem as do sistema. É o
   caminho para servidor com certificado interno ou autoassinado. O nome do certificado continua conferido.
-- **Um token por máquina, pelo cadastro** (a decisão
-  [CR](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/acesso.md#cr--cada-máquina-tem-o-seu-token-e-o-segredo-único-só-cadastra)
-  do SentinelWeb). A instalação põe o segredo de instalação (o `AGENT_ENROLL_SECRET` do servidor) em
+- **Um token por máquina, pelo cadastro.** A instalação põe o segredo de instalação (o `AGENT_ENROLL_SECRET`
+  do servidor) em
   `Server:EnrollSecretFile` (`/etc/sentinel-agent/enroll-secret`). Achando esse arquivo, o agente chama
   `POST /agent-hub/enroll` com o HWID, grava o token que volta em `Server:TokenFile`
   (`/var/lib/sentinel-agent/token`) e **apaga o segredo**. O WebSocket abre com `Authorization: Bearer <token>`.
@@ -134,8 +131,7 @@ antigo, ou numa mensagem própria (ela é a parte mais pesada, e muda pouco), de
 
 **Descartado:**
 - **O endereço fixo do antigo** (`ws://localhost:5000/agent-hub`, no `Program.cs`), sem token e sem TLS.
-- **Um token só para a frota**, o `AGENT_TOKEN` que o SentinelWeb tinha
-  ([D149](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/escopo.md#d149--o-apitoken-sai-e-o-agente-volta-ao-agent_token)).
+- **Um token só para a frota**, o `AGENT_TOKEN` que o SentinelWeb tinha.
   Com ele, quem tinha o token se apresentava com o HWID de outra máquina, tomava o lugar dela no servidor (a
   conexão nova substitui a velha) e passava a receber os comandos dela.
 - **Guardar o segredo de instalação depois do cadastro**, como o Fleet faz para se recadastrar sozinho. Ele
@@ -184,9 +180,7 @@ que ainda não existe.
 | Teto da reconexão | 5 min (continua) | Fleet (`orbit/pkg/wstransport/manager.go`) |
 
 - **O sorteio é um por ping:** a espera não passa do máximo, e a frota que reconectou junta não pinga junta.
-- **O limite do OFFLINE é do servidor**, a decisão
-  [CS](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#cs--a-máquina-calada-vira-offline-em-2-minutos)
-  do SentinelWeb, que diz também por que não há estado de "sumido".
+- **O limite do OFFLINE é do servidor**, e é ele quem o decide.
 - **Os tempos ficam no `ConnectionTimings`**, fora do `agent.json`; a telemetria entra quando o `Telemetry/`
   for escrito.
 
@@ -213,9 +207,8 @@ checagens do Tactical RMM (CPU, disco e serviço a cada 120 s, com alerta), que 
 2. `/sys/class/dmi/id/board_serial`, o serial da placa-mãe;
 3. `/sys/class/dmi/id/product_uuid`, o UUID do firmware.
 
-- **Serial falso** é o da lista do SentinelWeb (`server/modules/reconciliation/helpers/normalize-identity.helper.ts`,
-  a [D46](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#d46--evidência-ambígua-é-evidência-zero)
-  em código): 18 textos de fábrica, menos de 4 caracteres ou um caractere repetido.
+- **Serial falso** é o da lista do SentinelWeb (`server/modules/reconciliation/helpers/normalize-identity.helper.ts`):
+  18 textos de fábrica, menos de 4 caracteres ou um caractere repetido.
 - **UUID falso** é o que não tem formato de UUID ou é um dos cinco: os três do SentinelWeb (zeros, só `f` e
   `03000200-0400-0500-0006-000700080009`) e os dois que o osquery acrescenta (`kPlaceholderHardwareUUIDList`).
 - **A conta continua a da A4:** tira `-`, `:` e espaço, passa para minúsculas e faz o SHA-256 em hexadecimal
@@ -232,7 +225,7 @@ serial).
 - **O MAC da placa de rede.** Ele é fixo na placa, mas a placa sai da máquina: Wi-Fi M.2, adaptador USB e dock.
   Nenhum dos projetos olhados o põe na identidade; o MeshAgent faz o contrário e troca a identidade quando o MAC
   some (`meshcore/agentcore.c`: "NodeID will reset, MAC Address Mismatch"). O próprio SentinelWeb dá ao MAC 85
-  pontos, e não 100, por causa da dock (D46). O MAC continua no handshake como dado.
+  pontos, e não 100, por causa da dock. O MAC continua no handshake como dado.
 - **Só o UUID**, como o osquery e o Fleet: uma regra a menos, mas o HWID de toda máquina com serial mudaria, e o
   artigo descreve o HWID como "o SHA-256 do número de série do firmware".
 - **Número sorteado na instalação ou `/etc/machine-id`**, como Tactical RMM, Netdata e Elastic: mudam quando o
@@ -246,7 +239,7 @@ leem:
 | serial do produto, depois o da placa | systemd (`src/hostname/hostnamed.c`: "the product serial number (DMI type 1) is preferred, unless hwdb flags it as rubbish, in which case the baseboard serial number (DMI type 2) is used instead") |
 | o UUID do firmware | osquery (`osquery/core/system.cpp`, `getHardwareUUID`) e Fleet (`host-identifier` `uuid`, no orbit) |
 | a lista de UUIDs falsos | osquery (`kPlaceholderHardwareUUIDList`) e SentinelWeb (`normalize-identity.helper.ts`) |
-| a lista de seriais falsos e o caractere repetido | SentinelWeb (D46) e Fleet (`server/fleet/hosts.go`, `IsPlaceholderHardwareSerial`) |
+| a lista de seriais falsos e o caractere repetido | SentinelWeb e Fleet (`server/fleet/hosts.go`, `IsPlaceholderHardwareSerial`) |
 
 A lista maior só muda o HWID da máquina com serial que só ela reconhece, como `123456789`: com a lista da A4,
 todas essas ganhavam o mesmo HWID e viravam uma linha só no painel. Nenhuma máquina tem ainda token deste agente,
@@ -301,8 +294,7 @@ máquina mudar é mudança falsa, então cada campo vai na forma que só muda qu
   (`register-handshake.usecase.ts`), e não tem lista de genéricos para fabricante e modelo. A troca da Lenovo é a
   do GLPI Agent, do OCS e do osquery.
 - **`DiskTotalBytes` fica de fora** porque é o mais difícil de deixar estável (pendrive, HD USB com
-  `removable=0`, multipath), nenhuma tela do SentinelWeb o mostra (decisão
-  [BY](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#by--a-aba-máquina-mostra-o-que-o-agente-manda)),
+  `removable=0`, multipath), nenhuma tela do SentinelWeb o mostra,
   e a telemetria já manda os discos um a um. Nenhum dos quatro projetos soma discos no agente.
 - **`ChassisType` fica de fora** porque o formato não está definido no SentinelWeb: o teste de lá manda `"10"`,
   o código SMBIOS, e o agente falso manda `"Desktop"`.
@@ -333,9 +325,8 @@ máquina mudar é mudança falsa, então cada campo vai na forma que só muda qu
 systemd e o kernel):
 
 - **O serial de fábrica se reconhece sem `-`, `:` e espaço**, a forma que vai para o hash. A lista, o corte de 4
-  caracteres e o caractere repetido olham o valor compactado, e a lista ganha os sete do Fleet e do GLPI Agent. É a
-  [CT](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#ct--o-lixo-de-fábrica-se-reconhece-sem-separadores-e-a-lista-cresce)
-  do SentinelWeb, feita lá primeiro.
+  caracteres e o caractere repetido olham o valor compactado, e a lista ganha os sete do Fleet e do GLPI Agent, como o
+  SentinelWeb já fazia.
 - **A lista de UUIDs ganha os dois de fábrica da AMI na outra ordem de bytes:** no SMBIOS anterior ao 2.6, o kernel
   imprime o `product_uuid` com os primeiros campos invertidos (`dmi_save_uuid`, em `drivers/firmware/dmi_scan.c`).
 - **Na Lenovo, o modelo é sempre o `product_version`** quando ele não é de fábrica, como no osquery
@@ -419,9 +410,7 @@ hora ([A12](#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)) que
 
 ## A20 — O HWID é o id da instalação, e quem reconhece a máquina é o SentinelWeb, como no GLPI
 
-**Decidido** (2026-11-15), depois de olhar como os outros fazem
-([CV](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#cv--a-máquina-reinstalada-herda-a-própria-linha-como-no-glpi)
-no SentinelWeb):
+**Decidido** (2026-11-15), depois de olhar como os outros fazem:
 
 - **O HWID é um UUID sorteado no primeiro arranque**, gravado em `/var/lib/sentinel-agent/hwid` (`0644`, num
   temporário que depois toma o lugar do definitivo), e lido de lá daí em diante (`Identity/Hwid.cs`). Ele não vem do
@@ -559,16 +548,16 @@ programas, e uma amostra de minuto em minuto para a rede e os processos.
 
 > **Superada em parte por [A26](#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel):** o pedido de inventário na hora, que o painel agora faz.
 
-**Decidido** (2026-11-16, junto com a DD e a DE do SentinelWeb):
+**Decidido** (2026-11-16, junto com o SentinelWeb):
 
 - **O handshake leva `AgentVersion`:** a `<Version>` do csproj, a do pacote .deb, sem o `+commit` que o SDK põe na
   versão informativa (`Inventory/AgentVersion.cs`). Vai sempre. O SentinelWeb grava em `endpoints.agentVersion` e
-  mostra na lista de Agentes e na aba Máquina ([DE](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#de--a-lista-de-agentes-mostra-a-versão-do-agente)).
+  mostra na lista de Agentes e na aba Máquina.
 - **Com a conexão de pé, o handshake vai de novo a cada 24 horas**, com o inventário relido
   (`ConnectionTimings.InventoryInterval`). Na mesma conexão: o servidor só atualiza a máquina. A leitura que falha
   vai para o log e tenta no dia seguinte, sem derrubar a conexão.
 - **O 1008 leva o motivo do servidor para o log.** Ele fechava só pelo HWID diferente do token, e agora fecha
-  também a máquina excluída em Agentes ([DD](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#dd--agentes-ganha-sumidos-e-o-excluir-e-o-excluir-revoga-o-agente)); o log dizia sempre "HWID".
+  também a máquina excluída em Agentes; o log dizia sempre "HWID".
 
 **Supera em parte:** [A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera) (o
 inventário só a cada conexão).
@@ -591,7 +580,7 @@ inventário só a cada conexão).
 
 ## A26 — O `REFRESH` manda o inventário e a telemetria na hora, a pedido do painel
 
-**Decidido** (2026-11-17, junto com a [DK](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#dk--atualizar-agora-a-máquina-manda-o-inventário-e-a-telemetria-na-hora) do SentinelWeb):
+**Decidido** (2026-11-17, junto com o SentinelWeb):
 
 - **O servidor manda o `Command` com a `Action` `REFRESH`,** e o agente responde com o handshake, o inventário relido
   como no reenvio diário, e com uma amostra de telemetria na hora. É a conexão que trata o pedido, e ele nunca chega

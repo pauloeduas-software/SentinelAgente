@@ -50,10 +50,8 @@ com a hora da coleta no protocolo; aí o buffer volta a fazer sentido.
 `LoggedOnUser`.
 
 **Por quê:** o servidor aceita os dois e descarta (`normalize-payload.helper.ts`): a conformidade de software
-saiu do SentinelWeb (decisão G, em
-[`licencas.md`](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/licencas.md)), e a
-reconciliação parou de inferir pessoa pela conta do sistema (decisão A, em
-[`reconciliacao.md`](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md)).
+saiu do SentinelWeb, e a
+reconciliação parou de inferir pessoa pela conta do sistema.
 A lista de programas era a parte mais pesada do handshake, e ninguém a lia.
 
 **O que fica de fora, declarado:** "quais apps estão rodando" não é isto: é a telemetria de processos

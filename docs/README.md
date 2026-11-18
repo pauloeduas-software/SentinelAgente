@@ -8,7 +8,7 @@
 |---|---|---|
 | [`referencia/`](./referencia/) | **É verdade AGORA.** Mudou o código, muda aqui. Não conta história, não dá instrução. | o que o agente é: as pastas e o que cada uma guarda, e o protocolo com o SentinelWeb |
 | [`guias/`](./guias/) | **Começa com um verbo.** Receita para quem já sabe o que quer. | preparar o ambiente, instalar o agente |
-| [`decisoes/`](./decisoes/) | **Não se reescreve.** Se a realidade mudou, a decisão é *superada* por outra, com link entre as duas. | as decisões numeradas (`A1`…`A25`), um arquivo por assunto |
+| [`decisoes/`](./decisoes/) | **Não se reescreve.** Se a realidade mudou, a decisão é *superada* por outra, com link entre as duas. | as decisões numeradas (`A1`…`A26`), um arquivo por assunto |
 
 E um arquivo na raiz: este mapa.
 
@@ -23,7 +23,7 @@ negocia e o que já foi decidido que não volta.
 função, o que cada uma guarda e quem pode usar quem.
 
 **Vou mexer no que o agente manda ou recebe.** [`referencia/protocolo.md`](./referencia/protocolo.md). O
-protocolo é do SentinelWeb: a página diz o que o servidor lê hoje, com o arquivo de lá onde cada regra mora.
+protocolo é do SentinelWeb: a página diz o que o servidor faz hoje, e a fonte é a referência de lá.
 Campo, mensagem ou comando novo começa no servidor.
 
 **Vou montar a máquina para trabalhar.** [`guias/preparar-o-ambiente.md`](./guias/preparar-o-ambiente.md).
@@ -43,5 +43,8 @@ Campo, mensagem ou comando novo começa no servidor.
 3. **Decisão nova continua a numeração** (a próxima é a `A27`) e entra no arquivo do assunto que ela governa.
    Se ela corrige uma anterior, a antiga ganha `> **Superada por…**` logo abaixo do título, e a tabela de
    supersessões do [`decisoes/README.md`](./decisoes/README.md) cresce.
-4. **Um fato, um lugar.** Se precisar repetir, cite. O que já está escrito no SentinelWeb — as decisões dele,
-   a tela — ganha link para lá, não cópia.
+4. **Um fato, um lugar.** Se precisar repetir, cite.
+5. **A decisão do SentinelWeb fica no SentinelWeb.** Ela não se cita aqui, e a daqui não se cita lá. O que o
+   agente precisa saber do servidor vai em [`referencia/protocolo.md`](./referencia/protocolo.md), como o que
+   o servidor faz hoje, e a fonte é a referência de lá
+   ([`agente.md`](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/referencia/agente.md)).

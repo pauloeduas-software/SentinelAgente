@@ -19,8 +19,7 @@ antigo (`pauloeduas-software/SentinelAgent`) fica só como consulta; o que não 
 - **Consertar o agente antigo.** Além do que está no escopo, ele divergia do contrato do servidor: o endereço
   fixo em `ws://localhost:5000/agent-hub` (`Program.cs`), a conexão sem `Authorization: Bearer`, o total de
   rede em gigabits num campo `TotalRxGb` e o handshake sem série, UUID, fabricante, modelo, gabinete e
-  totais — o que levou o SentinelWeb a tirar as especificações da tela
-  ([BY](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/decisoes/reconciliacao.md#by--a-aba-máquina-mostra-o-que-o-agente-manda)).
+  totais — o que levou o SentinelWeb a tirar as especificações da tela.
   E só instalava pelo próprio binário (`--install` no `Program.cs`), sem jeito de desinstalar; `install.sh`,
   `install.ps1` e `SystemdInstaller.cs` estão vazios.
 - **Go.** É a linguagem dos agentes de referência (Tactical RMM, Fleet, Telegraf): binário pequeno, sem

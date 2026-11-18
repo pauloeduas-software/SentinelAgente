@@ -30,7 +30,7 @@ As decisões não se reescrevem, então quando uma corrige a outra isso fica esc
 | **A8** (em parte: os programas instalados) | **A10** | a lista de programas volta, pelo dpkg ou rpm; depende do SentinelWeb guardar e mostrar |
 | **A11** (em parte: o `Ping`) | **A12** | o `Ping` vai a cada 30 a 60 s, e o servidor põe OFFLINE após 2 min; a telemetria é de hora em hora |
 | **A4** (em parte: os genéricos e a máquina sem serial) | **A13** | a lista de seriais genéricos é a do SentinelWeb, e o UUID do firmware entra quando os dois seriais são genéricos |
-| **A4**, **A13** e **A15** (em parte: o hash do HWID) | **A20** | o HWID é um UUID sorteado na instalação, e o SentinelWeb reconhece a máquina reinstalada pelo serial e o UUID (a CV de lá); o `BiosSerial` cai no serial da placa |
+| **A4**, **A13** e **A15** (em parte: o hash do HWID) | **A20** | o HWID é um UUID sorteado na instalação, e o SentinelWeb reconhece a máquina reinstalada pelo serial e o UUID; o `BiosSerial` cai no serial da placa |
 | **A2** (em parte: a pasta `Service`) | **A21** | a pasta sai: a vida do serviço é do `AddSystemd()`, e o laço de cada função fica na pasta dela |
 | **A10**, **A16** e **A2** (em parte) | **A22** | os programas e as placas de vídeo vão no handshake, no formato do GLPI, antes de o SentinelWeb guardar; a pasta `Telemetry/Gpu` sai, e o uso da GPU continua fora |
 | **A10**, e em parte **A14**, **A16** e **A22** | **A24** | os programas, a RAM do handshake, a rede e os processos saem, e a GPU fica com o nome e a memória: o agente manda só o que o SentinelWeb lê |
@@ -43,7 +43,12 @@ As decisões não se reescrevem, então quando uma corrige a outra isso fica esc
 ## Os nomes
 
 **Por que `A` e número, e não `D` nem letra pura:** o SentinelWeb já usa os dois — `D1`…`D164` e depois letras
-(`A`, `B`… `CQ`) — e este repositório cita as decisões de lá o tempo todo (o `H`, o `D46`, o `BY`). Com o
-mesmo formato, "a decisão A" daqui e "a decisão A" de lá teriam o mesmo nome. Letra seguida de número não
-existe no SentinelWeb, então o nome sozinho diz de qual repositório a decisão é; o `A` é de Agente. Decisão do
-SentinelWeb citada aqui leva sempre o link para lá.
+(`A`, `B`… `CQ`). Com o mesmo formato, "a decisão A" daqui e "a decisão A" de lá teriam o mesmo nome. Letra
+seguida de número não existe no SentinelWeb, então o nome sozinho diz de qual repositório a decisão é; o `A` é
+de Agente.
+
+**Cada repositório guarda as próprias decisões.** As do SentinelWeb não se citam aqui, e as daqui não se citam
+lá. O que um precisa saber do outro mora na referência, como fato e sem decisão: aqui, o
+[`protocolo.md`](../referencia/protocolo.md), que diz o que o servidor faz; lá, o
+[`agente.md`](https://github.com/pauloeduas-software/SentinelWeb/blob/main/docs/referencia/agente.md), que diz
+o que chega do agente.
