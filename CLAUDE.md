@@ -24,7 +24,8 @@ dotnet format    # formata pelo .editorconfig
 ## Antes de mexer, leia
 
 - **Onde cada coisa mora:** [`arquitetura.md`](./docs/referencia/arquitetura.md). Uma pasta por função, e
-  `Connection`, `Protocol` e `Config` não conhecem as funções.
+  `Connection`, `Protocol` e `Config` não conhecem as funções. O `ArchitectureTests.cs` reprova quem quebra
+  isso, e o `DocumentationLinksTests.cs` o link ou a âncora que não existe (`tests/Repository/`).
 - **O que vai no fio:** [`protocolo.md`](./docs/referencia/protocolo.md). Campo, mensagem ou comando novo
   começa no SentinelWeb, não aqui.
 

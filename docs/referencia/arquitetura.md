@@ -26,6 +26,10 @@ Commands · Identity · Inventory · Telemetry   ──▶   Connection · Proto
 
 Um `using` que sobe a seta é o sinal de que algo está na pasta errada.
 
+**Isto é cobrado pelo teste, não pela revisão.** O `tests/Repository/ArchitectureTests.cs` reprova a base que
+cita uma função, o ciclo entre funções e a pasta nova que não está em nenhuma das duas listas dele; a falha diz
+o arquivo ou o ciclo.
+
 ---
 
 ## As pastas
@@ -48,7 +52,7 @@ SentinelAgente/
 │   │   └── Disk/
 │   └── Commands/                  # a lista fechada de ações e quem roda o systemctl (A5, A18)
 ├── tests/                         # as mesmas pastas do agente
-│   ├── Repository/                # o que vale para o repositório inteiro: os links da documentação
+│   ├── Repository/                # o que vale para o repositório inteiro: a regra das pastas e os links da documentação
 │   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
 ├── packaging/                     # o .deb: a unidade do systemd, os scripts de instalar e remover e o build-deb.sh (A3, A19)
 └── docs/
