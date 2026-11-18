@@ -17,7 +17,8 @@
 - **`Authorization: Bearer <token da máquina>`** na abertura. Sem ele, ou com um token que o servidor não
   emitiu ou revogou, a resposta é 401 antes do upgrade e a conexão nem chega a existir. O segredo de
   instalação não abre o hub.
-- **A conexão fica presa ao HWID do token:** mensagem com outro `Hwid` no payload é descartada.
+- **A conexão fica presa ao HWID do token:** o `Hwid` de qualquer mensagem que não é o do token fecha a
+  conexão com 1008.
 - **Uma conexão por HWID.** A conexão nova da mesma máquina substitui a velha, e o fechamento da velha não
   derruba a máquina.
 - **Do lado do agente** ([A11](../decisoes/protocolo.md#a11--a-conexão-endereço-na-configuração-wss-e-token-que-só-o-root-lê)):
@@ -39,11 +40,12 @@ Authorization: Bearer <AGENT_ENROLL_SECRET>
 |---|---|
 | `201 { "Token": "…" }` | o token novo: 64 caracteres hexadecimais. O servidor guarda só o hash, e o token anterior da máquina deixa de valer |
 | `401` | o segredo de instalação não confere |
-| `409` | a máquina está conectada com outro token: o recadastro não toma o lugar dela |
+| `409` | a máquina está conectada: o recadastro não toma o lugar dela |
 | `422` | o corpo sem `Hwid` |
 
 O teto é de 20 cadastros por minuto por IP. Revogar é excluir a máquina em Agentes, no SentinelWeb: o
-token deixa de valer e a conexão aberta fecha com 1008.
+token deixa de valer e a conexão aberta fecha com 1008. Sem `AGENT_ENROLL_SECRET` configurado, o servidor não
+sobe em produção, e fora dela aceita qualquer cadastro.
 
 ---
 
@@ -67,23 +69,24 @@ token deixa de valer e a conexão aberta fecha com 1008.
 **Sempre a primeira mensagem de cada conexão, e de novo uma vez por dia com a conexão de pé**
 ([A25](../decisoes/protocolo.md#a25--o-handshake-leva-a-versão-do-agente-e-vai-de-novo-uma-vez-por-dia)). É nele que o servidor liga aquela conexão ao HWID: sem ele, a
 telemetria até é gravada, mas o comando não chega, e a tela responde que o agente não está conectado (409).
-É também ele que cria a máquina: telemetria de HWID que nunca mandou handshake é descartada.
+É também ele que cria a máquina.
 
 | Campo | O servidor | Onde o Linux guarda |
 |---|---|---|
-| `Hwid` | a chave da conexão (`endpoints.hwid`, único); HWID nunca visto com o serial e o UUID de uma máquina desligada herda a linha dela | um UUID sorteado na instalação e guardado em `/var/lib/sentinel-agent/hwid` (`Identity/Hwid.cs`, [A20](../decisoes/protocolo.md#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi)) |
+| `Hwid` | a chave da conexão (`endpoints.hwid`, único). O HWID nunca visto herda a linha de uma única máquina desligada com a mesma série. Quando os dois lados têm UUID, o UUID também tem de bater. Quando só a série veio, ou a linha antiga não tem UUID, a série basta | um UUID sorteado na instalação e guardado em `/var/lib/sentinel-agent/hwid` (`Identity/Hwid.cs`, [A20](../decisoes/protocolo.md#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi)) |
 | `Hostname` | o nome da máquina na tela; só vira dica de vínculo no SentinelWeb, nunca vínculo. Ausente vira "desconhecido" | `/proc/sys/kernel/hostname`, sem o domínio |
 | `AgentVersion` | a lista de Agentes e a aba Máquina mostram (`endpoints.agentVersion`). Ausente apaga a gravada: é o agente anterior à A25 | a `<Version>` do csproj, sem o `+commit` do SDK (`Inventory/AgentVersion.cs`); vai sempre |
 | `OsVersion` | a aba Máquina mostra. Ausente vira "desconhecido" | `/etc/os-release`, `NAME VERSION_ID` (sem `NAME`, "Linux"; versão que é data de snapshot não vai); vai sempre |
 | `CpuModel` | a aba Máquina mostra | `/proc/cpuinfo` (`model name`); no ARM, não vai |
 | `MacAddress` | a aba Máquina mostra | `/sys/class/net/<placa>/address` da placa da rota padrão de menor métrica, com o túnel de VPN para trás ([A15](../decisoes/protocolo.md#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo)) |
 | `LocalIp` | a aba Máquina mostra | o IPv4 dessa placa na rede do gateway |
-| `BiosSerial` | a aba Máquina mostra; sinal `SERIAL` da reconciliação, o de 100 pontos; com o `SystemUuid`, reconhece a máquina reinstalada | `/sys/class/dmi/id/product_serial`, e o `board_serial` quando ele é de fábrica (só root); os dois de fábrica, não vai |
-| `SystemUuid` | sinal `UUID` da reconciliação | `/sys/class/dmi/id/product_uuid` (só root); de fábrica, não vai |
+| `BiosSerial` | a aba Máquina mostra; a série única liga a máquina ao computador sozinha; com o `SystemUuid`, reconhece a máquina reinstalada | `/sys/class/dmi/id/product_serial`, e o `board_serial` quando ele é de fábrica (só root); os dois de fábrica, não vai |
+| `SystemUuid` | não entra no vínculo; junto com a série, reconhece a máquina reinstalada | `/sys/class/dmi/id/product_uuid` (só root); de fábrica, não vai |
 | `Manufacturer` | a aba Máquina mostra | `/sys/class/dmi/id/sys_vendor`; de fábrica, não vai |
 | `HardwareModel` | a aba Máquina mostra. **Nunca** `Model` | `/sys/class/dmi/id/product_name`; na Lenovo, sempre o `product_version` |
 | `Gpus` | guarda em `endpoints.gpus` cada placa como `{ Name, MemoryBytes }`, sem a que não tem `Name` e até 16 placas, e a aba Máquina mostra o nome e a memória | lista de `{ Name, MemoryBytes }`: os dispositivos de classe `0x03` do `/sys/bus/pci/devices`, com o nome do `pci.ids` e a VRAM do `amdgpu` (`Inventory/GpuInfo.cs`, [A22](../decisoes/protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar), [A24](../decisoes/protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem)) |
 
+- **Valor de fábrica:** o campo não vem, e o servidor o lê como ausente.
 - **`MacAddress`, `LocalIp` e `CpuModel` ausentes apagam o valor gravado;** `BiosSerial`, `SystemUuid`,
   `Manufacturer`, `HardwareModel` e `Gpus`, não: o que não veio fica como estava.
 - **O servidor não compara mais um handshake com o anterior:** a mudança de hardware (`AssetChange`) saiu, com
@@ -105,13 +108,15 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 | `RamTotalBytes`, `RamUsedBytes` | bytes |
 | `Disks` | lista de `{ Name, TotalGb, UsedGb }`, com GB = 1024³ bytes; o disco sem `Name` sai, e a lista para em 64 |
 
+- **Chega quando a conexão sobe, de hora em hora e em resposta ao `REFRESH`.**
 - **Uma amostra é uma linha** em `telemetries`, com a hora em que **chegou** ao servidor: o protocolo não tem
   campo de hora, e o agente não guarda a amostra que não pôde mandar
   ([A17](../decisoes/escopo.md#a17--sem-buffer-offline-a-amostra-sem-conexão-é-descartada)). Só a última
   amostra de cada máquina fica: o expurgo diário apaga as outras.
 - **O intervalo é do agente.** O servidor não impõe nenhum. Este agente manda de hora em hora
   ([A12](../decisoes/protocolo.md#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)).
-- Campo ausente vira zero, e o `Disks` ausente, lista vazia.
+- Campo ausente vira zero, e o `Disks` ausente vira lista vazia.
+- A telemetria de HWID que nunca mandou handshake é descartada.
 - **Rede e processos o servidor não lê**, e o agente não manda ([A24](../decisoes/protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem)).
 - **Do lado do agente**
   ([A16](../decisoes/protocolo.md#a16--a-telemetria-a-média-desde-a-amostra-anterior-o-disco-como-o-df-a-rede-só-pela-placa-física)):
@@ -135,8 +140,8 @@ telemetria até é gravada, mas o comando não chega, e a tela responde que o ag
 ## Ping
 
 Só prova que a máquina está viva. Qualquer mensagem faz o mesmo, mas a telemetria é de hora em hora, e é o
-`Ping` que mantém a máquina ONLINE entre uma amostra e outra. A máquina vira OFFLINE na hora em que a conexão
-fecha, ou depois de **2 minutos** sem mensagem nenhuma; o servidor
+`Ping` que mantém a máquina como Conectado (`ONLINE`) entre uma amostra e outra. A máquina vira Desconectado
+(`OFFLINE`) na hora em que a conexão fecha, ou depois de **2 minutos** sem mensagem nenhuma; o servidor
 confere a cada 60 s.
 
 - **Do lado do agente**
@@ -156,8 +161,9 @@ confere a cada 60 s.
 - `CommandId` é um UUID novo por comando, gravado na auditoria do servidor: é a chave para cruzar com o log
   do agente.
 - **Não há fila.** Comando para máquina desconectada é recusado na hora (409), nunca executado depois.
-- **Não há resposta.** O servidor diz "Comando enviado" quando a conexão aceitou os bytes; o agente não
-  confirma, e mensagem de confirmação seria descartada como tipo desconhecido.
+- **502** quando a conexão cai antes de o pacote sair: nada foi entregue.
+- **Não há resposta.** A API responde "Comando enviado." quando a conexão aceitou os bytes, e a tela mostra
+  "Comando de … entregue ao agente de …"; o agente não confirma, e mensagem de confirmação seria descartada como tipo desconhecido.
 - **Do lado do agente**
   ([A5](../decisoes/comandos.md#a5--comando-é-lista-fechada-sem-shell),
   [A18](../decisoes/comandos.md#a18--o-comando-roda-o-systemctl-direto-respeita-os-bloqueios-e-diz-no-log-como-terminou)):
@@ -172,9 +178,11 @@ confere a cada 60 s.
 ```
 
 - O servidor manda pelo Atualizar agora da ficha e da lista de Agentes, de quem é **Técnico** ou acima,
-  e só ao agente 0.2.0 ou mais novo: o anterior recebe a recusa no painel e o pedido não sai.
+  e só ao agente 0.2.0 ou mais novo.
+- **409** para a máquina desconectada e para o agente anterior à 0.2.0 ou sem versão: o pedido não sai.
+  **502** quando o envio falha.
 - **Há resposta:** o agente manda o `Handshake`, com o inventário relido, e uma `Telemetry` na hora. O servidor
-  espera as duas gravadas, por até 15 s, antes de dizer "Máquina atualizada.".
+  espera as duas gravadas, e a tela mostra "Máquina atualizada."; sem as duas em 15 s, é **504**.
 - **Do lado do agente** ([A26](../decisoes/protocolo.md#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel)): a conexão trata o pedido, e ele não chega ao
   `PowerCommands`. O `IServerLink.RefreshRequested` avisa a telemetria, que manda a amostra sem mexer no relógio
   da hora.
@@ -185,11 +193,12 @@ confere a cada 60 s.
   reconecta.
 - **O agente encerrando** leva a máquina a OFFLINE na hora, a não ser que uma conexão mais nova da mesma
   máquina já a tenha substituído.
-- **O HWID do handshake diferente do token** o servidor fecha com o código 1008 ("HWID diferente do token"):
+- **O HWID da mensagem diferente do token** o servidor fecha com o código 1008 ("HWID diferente do token"):
   o arquivo do HWID foi apagado ou trocado depois do cadastro (A20), ou o token veio de outra instalação.
 - **A máquina excluída em Agentes** o servidor fecha com 1008 ("Máquina excluída"), e a
   reconexão leva 401. Nos dois 1008, o agente põe o motivo do servidor no log, espera o teto e não se recadastra
   sozinho; o recadastro é pôr o segredo de instalação de novo.
+- **A mensagem acima de 1 MiB** o servidor fecha com 1009.
 - **Do lado do agente** (`Connection/AgentConnection.cs`): a conexão que cai antes de 1 minuto conta como falha,
   e a espera seguinte dobra. O erro que não se conserta tentando de novo (a máquina sem HWID, o `CaFile`
   ilegível) para o serviço com código de saída 1, e o systemd vê a falha.
