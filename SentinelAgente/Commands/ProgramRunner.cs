@@ -28,6 +28,12 @@ internal sealed class ProcessRunner : IProgramRunner
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
 
+        // O socket de aviso do systemd é do agente, não do filho: desde o systemd
+        // 254, o systemctl manda EXIT_STATUS por ele ao sair, e o systemd recusa no
+        // log, porque o serviço é Type=notify e só o PID principal fala. O
+        // NotifyAccess=all calaria o log, mas deixaria o filho falar pelo agente.
+        start.Environment.Remove("NOTIFY_SOCKET");
+
         using var process = Process.Start(start)
             ?? throw new InvalidOperationException($"{program} não iniciou.");
 

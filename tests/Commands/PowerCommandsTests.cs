@@ -144,4 +144,23 @@ public sealed class ProcessRunnerTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => new ProcessRunner().RunAsync("/bin/sleep", ["30"], cancel.Token));
     }
+
+    [Fact]
+    public async Task OFilhoNaoHerdaOSocketDeAvisoDoSystemd()
+    {
+        var anterior = Environment.GetEnvironmentVariable("NOTIFY_SOCKET");
+        Environment.SetEnvironmentVariable("NOTIFY_SOCKET", "/run/systemd/notify");
+        try
+        {
+            var result = await new ProcessRunner().RunAsync("/bin/sh", ["-c", "printf %s \"${NOTIFY_SOCKET-ausente}\" >&2"],
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal("ausente", result.Error);
+            Assert.Equal("/run/systemd/notify", Environment.GetEnvironmentVariable("NOTIFY_SOCKET"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NOTIFY_SOCKET", anterior);
+        }
+    }
 }
