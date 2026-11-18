@@ -14,10 +14,12 @@ ele. O protocolo é do SentinelWeb; este repositório só fala o que está escri
 ```bash
 dotnet build     # compila
 dotnet test      # os testes (xUnit v3 pelo Microsoft.Testing.Platform, ligado no global.json)
+dotnet format    # formata pelo .editorconfig
 ./packaging/build-deb.sh   # o .deb em artifacts/ (A19)
 ```
 
-**Antes de dizer que terminou: `dotnet build` e `dotnet test` passando.**
+**Antes de dizer que terminou: `dotnet build` e `dotnet test` passando, e o `dotnet format` sem mudar nada.** O CI
+(`.github/workflows/ci.yml`) cobra os três a cada push na `main` e monta e confere o `.deb` de amd64 e arm64.
 
 ## Antes de mexer, leia
 

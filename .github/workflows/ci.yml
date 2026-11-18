@@ -1,0 +1,136 @@
+name: CI
+
+# O mesmo `dotnet build` e `dotnet test` do CLAUDE.md, mais a formatação e o
+# .deb das duas arquiteturas (A19). Os testes leem o testdata: nada pede root.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'global.json') }}
+          restore-keys: nuget-
+
+      - run: dotnet restore
+
+      # O .editorconfig: o que o `dotnet format` mudaria reprova.
+      - run: dotnet format --no-restore --verify-no-changes
+
+      # O Directory.Build.props trata aviso como erro.
+      - run: dotnet build -c Release --no-restore
+
+      - run: >-
+          dotnet test -c Release --no-build
+          --results-directory test-results
+          --report-xunit-junit --report-xunit-junit-filename testes.junit.xml
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 7
+
+  deb:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'global.json') }}
+          restore-keys: nuget-
+
+      - name: Monta o .deb
+        id: deb
+        run: |
+          saida="$(./packaging/build-deb.sh ${{ matrix.arch }})"
+          echo "path=${saida##*$'\n'}" >> "$GITHUB_OUTPUT"
+
+      # O build-deb.sh promete: o mesmo commit dá o mesmo pacote.
+      - name: Monta de novo e compara
+        run: |
+          primeiro="$(sha256sum "${{ steps.deb.outputs.path }}" | cut -d' ' -f1)"
+          ./packaging/build-deb.sh ${{ matrix.arch }} > /dev/null
+          segundo="$(sha256sum "${{ steps.deb.outputs.path }}" | cut -d' ' -f1)"
+          if [ "$primeiro" != "$segundo" ]; then
+            echo "::error::O .deb mudou entre duas montagens do mesmo commit."
+            exit 1
+          fi
+
+      - name: Confere os campos e os arquivos
+        run: |
+          deb="${{ steps.deb.outputs.path }}"
+          version="$(dotnet msbuild SentinelAgente/SentinelAgente.csproj -getProperty:Version)"
+          test "$(dpkg-deb --field "$deb" Package)" = sentinel-agent
+          test "$(dpkg-deb --field "$deb" Version)" = "$version"
+          test "$(dpkg-deb --field "$deb" Architecture)" = "${{ matrix.arch }}"
+          dpkg-deb --contents "$deb" | awk '{ print $1, $6 }' > conteudo.txt
+          for esperado in \
+            '-rwxr-xr-x ./usr/lib/sentinel-agent/sentinel-agent' \
+            '-rw-r--r-- ./usr/lib/sentinel-agent/sentinel-agent.dll' \
+            '-rw-r--r-- ./usr/lib/systemd/system/sentinel-agent.service' \
+            '-rw-r--r-- ./usr/share/doc/sentinel-agent/copyright' \
+            '-rw-r--r-- ./usr/share/doc/sentinel-agent/changelog.gz'; do
+            grep -qxF -- "$esperado" conteudo.txt || { echo "::error::Falta no .deb: $esperado"; exit 1; }
+          done
+          dpkg-deb --ctrl-tarfile "$deb" | tar -t | sort > controle.txt
+          for script in postinst prerm postrm; do
+            grep -qx "./$script" controle.txt || { echo "::error::Falta no .deb: DEBIAN/$script"; exit 1; }
+            sh -n "packaging/deb/$script"
+          done
+
+      # O systemd só aceita a unidade com o executável no lugar: ela é conferida
+      # apontada para o binário do próprio pacote, extraído fora da raiz.
+      - name: Confere a unidade do systemd
+        run: |
+          raiz="$RUNNER_TEMP/raiz"
+          dpkg-deb --extract "${{ steps.deb.outputs.path }}" "$raiz"
+          sed "s|/usr/lib/sentinel-agent/|$raiz/usr/lib/sentinel-agent/|g" \
+            "$raiz/usr/lib/systemd/system/sentinel-agent.service" > "$RUNNER_TEMP/sentinel-agent.service"
+          systemd-analyze verify "$RUNNER_TEMP/sentinel-agent.service"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-agent-${{ matrix.arch }}
+          path: ${{ steps.deb.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30

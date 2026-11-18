@@ -19,9 +19,11 @@ O `global.json` pede o SDK 10: com só outra versão instalada, o `dotnet build`
 ```bash
 dotnet build
 dotnet test
+dotnet format
 ```
 
-O `dotnet test` roda pelo Microsoft.Testing.Platform, ligado no `global.json`.
+O `dotnet test` roda pelo Microsoft.Testing.Platform, ligado no `global.json`. O `dotnet format` arruma o código
+pelo `.editorconfig`; o CI roda com `--verify-no-changes` e reprova o que ele mudaria.
 
 ## Um servidor para conversar
 
