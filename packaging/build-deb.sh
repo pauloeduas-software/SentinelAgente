@@ -21,8 +21,10 @@ package="$repo/artifacts/sentinel-agent_${version}_${arch}.deb"
 root="$(mktemp -d)"
 trap 'rm -rf "$root"' EXIT
 
-# Depende do runtime da distribuição (dotnet-runtime-10.0): quem corrige o .NET
-# é a atualização de segurança do Ubuntu, não um pacote novo do agente.
+# Depende do runtime da distribuição (dotnet-runtime-10.0): quem corrige o
+# runtime é a atualização de segurança do Ubuntu. As bibliotecas do NuGet (as
+# Microsoft.Extensions.* e a System.Diagnostics.EventLog) vão no pacote e se
+# corrigem com versão nova do agente.
 dotnet publish "$project" -c Release -r "$rid" --self-contained false \
 	-p:DebugType=none -o "$root/usr/lib/sentinel-agent"
 
