@@ -59,7 +59,28 @@ public sealed class GpuInfoTests
     }
 
     [Fact]
-    public void Sem_placa_de_video_o_campo_nao_vai()
+    public void Sem_placa_de_video_vai_a_lista_vazia()
+    {
+        var root = Directory.CreateTempSubdirectory("sentinel-gpu-");
+        try
+        {
+            // O PCI foi lido e só tem o controlador USB: a placa que havia saiu.
+            var device = Directory.CreateDirectory(Path.Combine(root.FullName, "sys", "bus", "pci", "devices", "0000:00:14.0"));
+            File.WriteAllText(Path.Combine(device.FullName, "class"), "0x0c0330\n");
+
+            var gpus = GpuInfo.Read(new SystemRoot(root.FullName), () => new Dictionary<string, long>());
+
+            Assert.NotNull(gpus);
+            Assert.Empty(gpus);
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Sem_o_pci_o_campo_nao_vai()
     {
         Assert.Null(Read("notebook-dell"));
     }

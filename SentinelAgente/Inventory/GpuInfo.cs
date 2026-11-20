@@ -4,7 +4,7 @@ namespace SentinelAgente.Inventory;
 
 /// <summary>
 /// As placas de vídeo, como o GLPI Agent (<c>Generic/PCI/Videos.pm</c>): os
-/// dispositivos PCI de vídeo, com o nome do <c>pci.ids</c> e a memória (A22, A24). A
+/// dispositivos PCI de vídeo, com o nome do <c>pci.ids</c> e a memória (A22, A24, A28). A
 /// classe é a do <c>/sys/bus/pci/devices/&lt;slot&gt;/class</c>, <c>0x03</c> (VGA, 3D e
 /// tela), em vez do nome que o lspci escreve, que é o que o GLPI compara.
 /// </summary>
@@ -14,7 +14,8 @@ namespace SentinelAgente.Inventory;
 /// <c>pci.ids</c>, o par fabricante:dispositivo. A memória é a VRAM que o <c>amdgpu</c> mostra, e a
 /// da NVIDIA vem do <see cref="NvidiaSmi"/> (A28): o GLPI manda o tamanho da janela do PCI,
 /// que é 256 MB numa placa de 8 GB. A integrada, AMD ou Intel, vai sem memória: ela não tem
-/// memória própria. A resolução, que o GLPI tira do
+/// memória própria. A AMD integrada sem o <c>hwmon</c> (<c>amdgpu.dpm=0</c>) não se distingue
+/// da dedicada, e vai com a reserva da BIOS (A28). A resolução, que o GLPI tira do
 /// <c>xrandr</c>, não vai: o serviço não tem tela.
 /// </remarks>
 internal static class GpuInfo
@@ -23,8 +24,10 @@ internal static class GpuInfo
     private const string Nvidia = "10de";
 
     /// <summary>
-    /// As placas, na ordem do slot; nenhuma, <c>null</c>. A memória da NVIDIA, pelo
-    /// slot, só é pedida quando há uma placa dela.
+    /// As placas, na ordem do slot. Sem placa, a lista vazia: o servidor só apaga a
+    /// placa que saiu com ela, e o campo ausente deixaria a velha na tela. Sem o
+    /// <c>/sys/bus/pci/devices</c>, <c>null</c>: não há o que dizer. A memória da
+    /// NVIDIA, pelo slot, só é pedida quando há uma placa dela.
     /// </summary>
     public static IReadOnlyList<GpuPayload>? Read(SystemRoot root, Func<IReadOnlyDictionary<string, long>> nvidiaMemory)
     {
@@ -45,7 +48,7 @@ internal static class GpuInfo
             cards.Add((address, vendor, device, vram));
         }
 
-        if (cards.Count == 0) return null;
+        if (cards.Count == 0) return [];
         var ids = PciIds.Read(root, cards.Select(card => card.Vendor).ToHashSet());
         var nvidia = cards.Any(card => card.Vendor == Nvidia && card.Vram is null)
             ? nvidiaMemory()
