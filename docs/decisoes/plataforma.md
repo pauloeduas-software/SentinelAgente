@@ -24,14 +24,12 @@ antigo (`pauloeduas-software/SentinelAgent`) fica só como consulta; o que não 
   E só instalava pelo próprio binário (`--install` no `Program.cs`), sem jeito de desinstalar; `install.sh`,
   `install.ps1` e `SystemdInstaller.cs` estão vazios.
 - **Go.** É a linguagem dos agentes de referência (Tactical RMM, Fleet, Telegraf): binário pequeno, sem
-  runtime, com biblioteca pronta de métricas. Mas o artigo e a especificação de requisitos do projeto dizem
-  C#, e para o tamanho do projeto a vantagem não paga reescrever os dois.
-- **.NET 8**, que o artigo cita: o suporte terminou em 10/11/2026. O 10 é a versão LTS em vigor.
+  runtime, com biblioteca pronta de métricas. Mas o C# também cobre o que o agente precisa (o porquê,
+  abaixo), e para o tamanho do projeto a vantagem não paga a troca de linguagem.
+- **.NET 8:** o suporte terminou em 10/11/2026. O 10 é a versão LTS em vigor.
 
-**Por quê:** o que prende a linguagem são os documentos do projeto, não o código antigo — e o C# cobre tudo
-o que se pede do agente: serviço do systemd, `/proc` e `/sys`, WebSocket e os comandos de energia.
-
-**O custo:** o artigo troca ".NET 8" por ".NET 10".
+**Por quê:** o C# cobre tudo o que se pede do agente: serviço do systemd, `/proc` e `/sys`, WebSocket e os
+comandos de energia.
 
 ---
 
@@ -54,7 +52,7 @@ com as mesmas pastas e `testdata/`. A regra está em
 
 **Descartado:**
 - **Os quatro projetos do antigo** (`Core`, `Linux`, `Worker` e `Shared`). A separação por sistema operacional
-  só se paga com Windows, e a especificação diz Linux; o `Shared` dividia os pacotes com um servidor .NET, e o
+  só se paga com Windows, e o agente é só Linux; o `Shared` dividia os pacotes com um servidor .NET, e o
   servidor é TypeScript.
 - **Uma camada por cima das funções** (`Infra/` e `Modules/`, como o `server/` do SentinelWeb): esconde as
   funções um nível abaixo sem separar nada que as pastas já não separem.

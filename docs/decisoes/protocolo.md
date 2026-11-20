@@ -35,9 +35,8 @@
   mudança muda o HWID das máquinas já cadastradas, e cada uma vira uma linha nova em `endpoints`, sem o
   vínculo com o computador.
 
-**Por quê:** o HWID é a chave da máquina no SentinelWeb (`endpoints.hwid`, único), e o artigo do projeto o
-descreve assim: "o SHA-256 do número de série do firmware". Mantê-lo deixa o agente novo entrar no lugar do
-antigo sem o servidor perceber a troca.
+**Por quê:** o HWID é a chave da máquina no SentinelWeb (`endpoints.hwid`, único). Mantê-lo deixa o agente
+novo entrar no lugar do antigo sem o servidor perceber a troca.
 
 **O que fica de fora, declarado:**
 - **A máquina sem série válida não sobe**, como no antigo: sem o que derivar, o agente para com erro em vez de
@@ -226,8 +225,7 @@ serial).
   Nenhum dos projetos olhados o põe na identidade; o MeshAgent faz o contrário e troca a identidade quando o MAC
   some (`meshcore/agentcore.c`: "NodeID will reset, MAC Address Mismatch"). O próprio SentinelWeb dá ao MAC 85
   pontos, e não 100, por causa da dock. O MAC continua no handshake como dado.
-- **Só o UUID**, como o osquery e o Fleet: uma regra a menos, mas o HWID de toda máquina com serial mudaria, e o
-  artigo descreve o HWID como "o SHA-256 do número de série do firmware".
+- **Só o UUID**, como o osquery e o Fleet: uma regra a menos, mas o HWID de toda máquina com serial mudaria.
 - **Número sorteado na instalação ou `/etc/machine-id`**, como Tactical RMM, Netdata e Elastic: mudam quando o
   sistema é reinstalado.
 

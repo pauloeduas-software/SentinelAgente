@@ -69,8 +69,9 @@ pelo `SystemRoot` do `Inventory`.
 ### Onde mora o que é do Linux
 
 Na pasta da função que precisa dele: quem lê `/proc/stat` é o coletor de `Cpu/`, quem chama `systemctl`
-é o `Commands/`. O agente é só Linux (a especificação de requisitos diz isso), então não há camada que
-esconda o sistema operacional. Se o Windows vier, cada função ganha a sua versão ao lado da do Linux.
+é o `Commands/`. O agente é só Linux, então não há camada que esconda o sistema operacional. O Windows é
+trabalho futuro ([A27](../decisoes/plataforma.md#a27--o-agente-para-windows-é-trabalho-futuro)): quando vier,
+cada função ganha a sua versão ao lado da do Linux.
 
 ### Testes
 
