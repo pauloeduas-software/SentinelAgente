@@ -15,10 +15,12 @@ using Microsoft.Extensions.Logging;
 namespace SentinelAgente.Tests.Connection;
 
 /// <summary>
-/// Um /agent-hub de mentira, com o comportamento do SentinelWeb que o agente
-/// precisa respeitar (`agent.maestro.ts` e a decisão CR de lá): o cadastro troca o
-/// segredo de instalação por um token; o hub dá 401 antes do upgrade a quem não
-/// tem um token emitido; e o servidor pode mandar comando e fechar com 1001.
+/// Um /agent-hub de mentira, com o que o agente precisa do SentinelWeb
+/// (<c>agent.maestro.ts</c>, <c>agent.controller.ts</c> e <c>enroll-agent.usecase.ts</c>):
+/// o cadastro troca o segredo de instalação por um token e responde 201 com
+/// <c>{ "Token": … }</c>; o hub dá 401 antes do upgrade a quem não tem um token
+/// emitido. O resto o teste faz pelo socket: manda o comando e fecha com 1001 ou
+/// 1008, com os motivos de lá. O hub não confere o HWID das mensagens.
 /// </summary>
 internal sealed class FakeAgentHub : IAsyncDisposable
 {
@@ -106,7 +108,8 @@ internal sealed class FakeAgentHub : IAsyncDisposable
         Enrolled.Writer.TryWrite(hwid);
 
         context.Response.StatusCode = StatusCodes.Status201Created;
-        await context.Response.WriteAsJsonAsync(new { Token = token });
+        // Em PascalCase, como o servidor: o padrão do ASP.NET seria camelCase.
+        await context.Response.WriteAsJsonAsync(new { Token = token }, new JsonSerializerOptions());
     }
 
     private async Task HandleAsync(HttpContext context)

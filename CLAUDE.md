@@ -33,10 +33,12 @@ dotnet format    # formata pelo .editorconfig
 
 - **O HWID é o id da instalação:** um UUID sorteado no primeiro arranque e guardado em
   `/var/lib/sentinel-agent/hwid`, como o `agentid` do GLPI. Quem reconhece a máquina reinstalada é o SentinelWeb,
-  pelo `BiosSerial` (o do produto, senão o da placa) e pelo `SystemUuid`; valor de fábrica vai nulo (A20).
-- **Rodar de verdade é com sudo:** o HWID e o token moram em `/var/lib/sentinel-agent`, só do root, e sem eles
-  o agente não sobe; serial e UUID do DMI também são só do root.
-- **Comando é lista fechada:** `SHUTDOWN`, `REBOOT` e `SUSPEND`, cada um com um executável fixo e sem shell.
+  pelo `BiosSerial` (o do produto, senão o da placa) e, quando os dois lados têm, pelo `SystemUuid`; valor de
+  fábrica não vai (A20).
+- **Rodar de verdade é com sudo:** o HWID e o token moram em `/var/lib/sentinel-agent`, só do root, e sem acesso
+  ao HWID o agente não sobe; serial e UUID do DMI também são só do root.
+- **Comando é lista fechada:** `SHUTDOWN`, `REBOOT` e `SUSPEND`, cada um com um verbo fixo do
+  `/usr/bin/systemctl`, sem shell.
   O resto é recusado e vai para o log, e o resultado do `systemctl` também; os bloqueios do logind valem (A5, A18).
   A lista não cresce (A23). O `REFRESH` não é comando de sistema: a conexão o trata, e ele só faz o agente mandar
   o handshake e a telemetria na hora (A26).
@@ -47,8 +49,9 @@ dotnet format    # formata pelo .editorconfig
   cadastro troca pelo segredo de instalação; o agente apaga o segredo e não se recadastra sozinho (A11).
 - **Nada escondido:** o agente aparece com o próprio nome no `ps` e no `systemctl status`, e para com
   `systemctl stop` (A6).
-- **Só vai o que o SentinelWeb lê:** programas, rede e processos não vão, e as placas de vídeo levam o nome e a
-  memória; volta quando o servidor guardar e mostrar (A24).
+- **Só vai o que o SentinelWeb lê:** programas, a telemetria de rede e os processos não vão, e voltam quando o
+  servidor guardar e mostrar (A24); as placas de vídeo levam o nome, e a dedicada, a memória quando o driver
+  mostra (A28).
 - **Nunca dado verdadeiro no repositório:** testdata, exemplo e doc são inventados no formato real; nada
   copiado da máquina, da rede ou da conta (MAC, IP, hostname, serial, processos, programas).
 - **Só pt-BR** em log, comentário e docs.

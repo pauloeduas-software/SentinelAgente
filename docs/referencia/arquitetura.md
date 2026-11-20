@@ -20,9 +20,10 @@ Commands · Identity · Inventory · Telemetry   ──▶   Connection · Proto
 
 - `Connection`, `Protocol` e `Config` **não** conhecem nenhuma função: não importam nada de `Commands`,
   `Identity`, `Inventory` nem `Telemetry`.
-- Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity`, e a `Telemetry` o HWID que o `Inventory` leu), nunca o
-  contrário em ciclo.
-- O `Program.cs` é o único lugar que conhece todas: ele liga as peças.
+- Uma função pode usar outra quando precisa do dado dela (o `Inventory` usa o HWID do `Identity`, e a
+  `Telemetry` o HWID que o `Inventory` leu), nunca o contrário em ciclo.
+- O `Program.cs` liga as peças: a conexão e cada função se registram lá (`AddServerConnection`,
+  `AddInventory`, `AddTelemetry`, `AddCommands`); o `Identity` entra pelo `Inventory`.
 
 Um `using` que sobe a seta é o sinal de que algo está na pasta errada.
 
@@ -37,33 +38,40 @@ o arquivo ou o ciclo.
 ```
 SentinelAgente/
 ├── SentinelAgente.slnx            # a solução: o agente e os testes
-├── Directory.Build.props          # o que vale para todo projeto: net10.0, nullable, aviso vira erro
+├── Directory.Build.props          # o que vale para todo projeto: net10.0, nullable, usings implícitos, aviso vira erro e só Linux (SupportedOSPlatform)
 ├── global.json                    # o SDK 10 e o dotnet test pelo Microsoft.Testing.Platform
+├── .editorconfig                  # o formato que o dotnet format cobra
+├── .github/workflows/ci.yml       # formato, build, testes e o .deb de amd64 e arm64
 ├── SentinelAgente/                # o agente; o binário sai como `sentinel-agent`
 │   ├── Program.cs                 # O PROCESSO: host, systemd e o registro das peças
-│   ├── Config/                    # BASE. endereço do servidor, token, intervalo da telemetria
-│   ├── Connection/                # BASE. o WebSocket com o /agent-hub: token, handshake a cada conexão, reconexão
-│   ├── Protocol/                  # BASE. o envelope e as mensagens, espelho do agent-protocol.types.ts
-│   ├── Identity/                  # o HWID, sorteado na instalação (A20)
-│   ├── Inventory/                 # o que o handshake leva: nome, sistema, rede, serial, fabricante, placas de vídeo, versão (A14, A22, A24, A25)
+│   ├── Config/                    # BASE. a seção Server do agent.json, conferida na subida, e os arquivos de segredo (chmod 600)
+│   ├── Connection/                # BASE. o WebSocket com o /agent-hub: cadastro, CA própria, handshake, REFRESH, ping, reconexão, e as interfaces que a ligam às funções
+│   ├── Protocol/                  # BASE. o envelope e as mensagens, com os nomes que o SentinelWeb lê (agent-protocol.types.ts e normalize-payload.helper.ts)
+│   ├── Identity/                  # o HWID, sorteado no primeiro arranque e guardado em /var/lib/sentinel-agent/hwid (A20)
+│   ├── Inventory/                 # o que o handshake leva: nome, sistema, CPU, MAC e IP, serial, UUID, fabricante e modelo, placas de vídeo, versão (A14, A22, A24, A25, A28)
 │   ├── Telemetry/                 # a amostra periódica: um coletor por métrica
 │   │   ├── Cpu/
 │   │   ├── Memory/
 │   │   └── Disk/
 │   └── Commands/                  # a lista fechada de ações e quem roda o systemctl (A5, A18)
-├── tests/                         # as mesmas pastas do agente
+├── tests/                         # as mesmas pastas do agente (a Telemetry/ sem as subpastas)
 │   ├── Repository/                # o que vale para o repositório inteiro: a regra das pastas e os links da documentação
-│   └── testdata/                  # /proc e /sys inventados no formato real, para os leitores
+│   └── testdata/maquinas/         # uma pasta por máquina, com /proc, /sys, /etc e o pci.ids inventados no formato real
 ├── packaging/                     # o .deb: a unidade do systemd, os scripts de instalar e remover e o build-deb.sh (A3, A19)
+├── artifacts/                     # o .deb que o build-deb.sh monta; fora do git
 └── docs/
 ```
+
+Os tempos (reconexão, ping, reenvio diário, a hora da telemetria, os prazos do `systemctl` e do `nvidia-smi`)
+ficam fixos no código, com quem os usa: o `ConnectionTimings` em `Connection/`, o `TelemetryTimings` em
+`Telemetry/`, e os prazos no `PowerCommands` e no `NvidiaSmi`. Nenhum está no `agent.json`.
 
 ### Dentro de `Telemetry/`
 
 Cada métrica é uma pasta com o seu coletor, e todos entregam a sua parte da mesma amostra. Métrica nova é
 pasta nova, sem mexer nas outras — é como o Telegraf cresce (`plugins/inputs/cpu`, `mem`, `disk`).
 Cada coletor implementa o `ITelemetryCollector`, preenche a sua parte do `TelemetrySample` e entra no
-`TelemetryRegistration`; quem marca a hora e manda é o `TelemetryService`. Os coletores leem `/proc` e `/sys`
+`TelemetryRegistration`; quem segue o relógio e manda é o `TelemetryService`. Os coletores leem `/proc` e `/sys`
 pelo `SystemRoot` do `Inventory`.
 
 ### Onde mora o que é do Linux
