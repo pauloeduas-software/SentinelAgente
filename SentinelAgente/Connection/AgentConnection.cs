@@ -56,12 +56,15 @@ public sealed partial class AgentConnection(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var url = _options.Url!;
-        _certificate = _options.CaFile is { } caFile ? ServerCertificate.FromPemFile(caFile) : null;
-        _enrollment = new Enrollment(url, _certificate, timings.ConnectTimeout);
         var backoff = new Backoff(timings.BackoffInitial, timings.BackoffMax);
 
         try
         {
+            // Dentro do try: o CaFile sem certificado ou ilegível sai com código 1,
+            // como o HWID que não abre.
+            _certificate = _options.CaFile is { } caFile ? ServerCertificate.FromPemFile(caFile) : null;
+            _enrollment = new Enrollment(url, _certificate, timings.ConnectTimeout);
+
             // A apresentação montada uma vez antes da primeira conexão: o HWID que
             // não abre para aqui, com o motivo no journal, e não depois de o
             // servidor responder (A20).
