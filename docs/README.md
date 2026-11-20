@@ -42,7 +42,9 @@ Campo, mensagem ou comando novo começa no servidor.
 2. **Auditoria e revisão não ganham arquivo.** Elas atualizam o documento que revisaram.
 3. **Decisão nova continua a numeração** (a próxima é a `A29`) e entra no arquivo do assunto que ela governa.
    Se ela corrige uma anterior, a antiga ganha `> **Superada por…**` logo abaixo do título, e a tabela de
-   supersessões do [`decisoes/README.md`](./decisoes/README.md) cresce.
+   supersessões do [`decisoes/README.md`](./decisoes/README.md) cresce. A linha "Decisões neste arquivo" do
+   topo e o índice do `decisoes/README.md` também mudam, e a faixa (`A1`…) da tabela acima e o número da
+   próxima, aqui e no [`CLAUDE.md`](../CLAUDE.md).
 4. **Um fato, um lugar.** Se precisar repetir, cite.
 5. **A decisão do SentinelWeb fica no SentinelWeb.** Ela não se cita aqui, e a daqui não se cita lá. O que o
    agente precisa saber do servidor vai em [`referencia/protocolo.md`](./referencia/protocolo.md), como o que

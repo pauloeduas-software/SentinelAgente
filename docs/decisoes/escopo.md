@@ -5,7 +5,7 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A6–A8 e A17 (a A7 superada pela A9, que a A17 superou, e a A8 em parte pela A10).
+> Decisões neste arquivo: A6–A8 e A17 (a A7 superada pela A9, que a A17 superou, e a A8 em parte pela A10 e pela A24).
 
 ---
 
@@ -45,14 +45,16 @@ com a hora da coleta no protocolo; aí o buffer volta a fazer sentido.
 ## A8 — O handshake não manda programas instalados nem usuário logado
 
 > **Superada em parte por [A10](./protocolo.md#a10--a-lista-de-programas-instalados-volta):** a lista de programas volta; o usuário logado continua fora.
+>
+> **Superada em parte por [A24](./protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** a telemetria de processos, que a A8 dava como o
+> lugar de "quais apps estão rodando", também sai.
 
 **Decidido** (2026-11-13): o handshake não leva `InstalledSoftware`, que o antigo mandava, nem
 `LoggedOnUser`.
 
 **Por quê:** o servidor aceita os dois e descarta (`normalize-payload.helper.ts`): a conformidade de software
-saiu do SentinelWeb, e a
-reconciliação parou de inferir pessoa pela conta do sistema.
-A lista de programas era a parte mais pesada do handshake, e ninguém a lia.
+saiu do SentinelWeb, e a reconciliação parou de inferir pessoa pela conta do sistema. A lista de programas era
+a parte mais pesada do handshake, e ninguém a lia.
 
 **O que fica de fora, declarado:** "quais apps estão rodando" não é isto: é a telemetria de processos
 (`Telemetry/Processes`), que o servidor já recebe.

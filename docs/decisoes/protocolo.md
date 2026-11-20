@@ -6,17 +6,21 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22, A24, A25 e A26.
+> Decisões neste arquivo: A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22, A24, A25, A26 e A28 (a A4
+> superada pela A20 e em parte pela A13; a A9 pela A17; a A10 pela A24 e em parte pela A22; a A11 em parte pela
+> A12; a A13 pela A20 e em parte pela A15; a A14 em parte pela A15, pela A20, pela A24 e pela A25; a A15 em
+> parte pela A20; a A16 em parte pela A22 e pela A24; a A22 em parte pela A24 e pela A28; e a A25 em parte pela
+> A26).
 
 ---
 
 ## A4 — O HWID continua o do agente antigo
 
-> **Superada por [A20](#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi):** o HWID deixa de vir do firmware; é um UUID sorteado na instalação.
->
 > **Superada em parte por [A13](#a13--o-hwid-é-uma-fila-de-três-dados-do-firmware):** a conta continua, mas a
 > lista de seriais genéricos passa a ser a do SentinelWeb, e o UUID do firmware entra quando os dois seriais
 > são genéricos.
+>
+> **Superada por [A20](#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi):** o HWID deixa de vir do firmware; é um UUID sorteado na instalação.
 
 **Decidido** (2026-11-13): o HWID é a mesma conta do agente antigo (`HwidGenerator` e
 `ProcHardwareProvider`):
@@ -42,9 +46,8 @@ novo entrar no lugar do antigo sem o servidor perceber a troca.
 - **A máquina sem série válida não sobe**, como no antigo: sem o que derivar, o agente para com erro em vez de
   inventar uma identidade. Boa parte das máquinas virtuais cai aqui. Um segundo recurso (o UUID, só quando
   não há série) não muda o HWID de quem já sobe, e é decisão à parte.
-- **A lista de genéricos é menor que a do SentinelWeb:** falta `0123456789`, e as máquinas com essa série ganham todas o
-  mesmo HWID. Corrigir muda
-  o HWID delas, então também é decisão à parte.
+- **A lista de genéricos é menor que a do SentinelWeb:** falta `0123456789`, e as máquinas com essa série
+  ganham todas o mesmo HWID. Corrigir muda o HWID delas, então também é decisão à parte.
 
 ---
 
@@ -76,10 +79,10 @@ disco). O antigo guardava 10 amostras em memória, a cada 30 s: cinco minutos.
 
 ## A10 — A lista de programas instalados volta
 
-> **Superada por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** a lista de programas sai de novo, até o SentinelWeb guardar e mostrar.
-
 > **Superada em parte por [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
 > o agente manda a lista no handshake sem esperar o servidor guardar.
+>
+> **Superada por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** a lista de programas sai de novo, até o SentinelWeb guardar e mostrar.
 
 **Decidido** (2026-11-13): o agente volta a mandar os programas instalados (`Software/`), lidos do gerenciador
 de pacotes — `dpkg-query` no Debian e Ubuntu, `rpm` no Fedora e Red Hat —, com nome e versão. O usuário logado
@@ -197,6 +200,9 @@ checagens do Tactical RMM (CPU, disco e serviço a cada 120 s, com alerta), que 
 
 ## A13 — O HWID é uma fila de três dados do firmware
 
+> **Superada em parte por [A15](#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo):** o serial de fábrica se reconhece sem `-`, `:` e
+> espaço, e as listas de seriais e de UUIDs de fábrica crescem.
+>
 > **Superada por [A20](#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi):** o HWID é um UUID sorteado na instalação, e quem reconhece a máquina
 > reinstalada é o SentinelWeb, pelo serial e pelo UUID. A fila sobrevive no `BiosSerial`: o do produto, senão o da placa.
 
@@ -254,8 +260,15 @@ então esta é a hora de fechar a conta.
 
 ## A14 — O inventário: o que fica estável vai, o que oscila ou não tem formato espera
 
+> **Superada em parte por [A15](#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo):** na Lenovo, o modelo é sempre o `product_version`;
+> o sistema sem `NAME` vai como "Linux" mais o `VERSION_ID`; e o túnel da VPN se reconhece pelo tipo da placa, e
+> não pela falta de `device/`.
+>
+> **Superada em parte por [A20](#a20--o-hwid-é-o-id-da-instalação-e-quem-reconhece-a-máquina-é-o-sentinelweb-como-no-glpi):** o `BiosSerial` é o
+> serial do produto, senão o da placa-mãe, e a máquina sem dado do firmware sobe.
+>
 > **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `RamTotalBytes` sai do handshake; a RAM vai só na telemetria.
-
+>
 > **Superada em parte por [A25](#a25--o-handshake-leva-a-versão-do-agente-e-vai-de-novo-uma-vez-por-dia):** o handshake vai de novo uma vez por dia, com a ficha relida, e leva a versão do agente.
 
 **Decidido** (2026-11-15): o handshake leva a ficha da máquina, relida a cada conexão
@@ -356,10 +369,10 @@ eles que a máquina sai.
 
 ## A16 — A telemetria: a média desde a amostra anterior, o disco como o `df`, a rede só pela placa física
 
-> **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `Network` e o `TopProcesses` saem da telemetria.
-
 > **Superada em parte por [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
 > a GPU vai no handshake, como inventário; o uso dela continua fora.
+>
+> **Superada em parte por [A24](#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):** o `Network` e o `TopProcesses` saem da telemetria.
 
 **Decidido** (2026-11-15), com o Telegraf, o gopsutil e o Tactical RMM como base. Cada número da amostra de hora em
 hora ([A12](#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)) quer dizer isto:
@@ -425,7 +438,8 @@ hora ([A12](#a12--os-tempos-telemetria-de-hora-em-hora-e-ping-de-30-a-60-s)) que
   ele sorteia outro, e o token, preso ao HWID antigo, é recusado com 1008 até o recadastro.
 
 **Supera:** [A4](#a4--o-hwid-continua-o-do-agente-antigo), [A13](#a13--o-hwid-é-uma-fila-de-três-dados-do-firmware) e,
-em parte, a [A15](#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo).
+em parte, a [A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera) e a
+[A15](#a15--a-revisão-da-identidade-e-do-inventário-o-lixo-sem-separadores-a-lenovo-sempre-o-túnel-pelo-tipo).
 
 **Por quê:** o HWID tirado do firmware não era imutável. Ele mudava com a placa-mãe, com o serial que a BIOS passa a
 preencher e com cada revisão da regra, que já aconteceu uma vez (a A15), e cada mudança deixava duas linhas da mesma
@@ -450,7 +464,6 @@ vista: a lista de fábrica e os valores repetidos em várias máquinas, que o ag
 - **A troca de placa-mãe** vira máquina nova no SentinelWeb, como no GLPI, no Jamf e no Intune.
 - **O disco clonado com o agente instalado** leva o HWID e o token juntos: as duas máquinas disputam a mesma conexão.
   O GLPI Agent também não o detecta. Quem monta imagem apaga `/var/lib/sentinel-agent` antes de gerá-la.
-
 
 ---
 
@@ -527,6 +540,8 @@ Fica: a identidade e o inventário (`Hwid`, `Hostname`, `OsVersion`, `CpuModel`,
 telemetria, o `Ping` e os três comandos.
 
 **Supera:** [A10](#a10--a-lista-de-programas-instalados-volta) e, em parte, a
+[A2](./plataforma.md#a2--um-projeto-com-uma-pasta-por-função), a
+[A8](./escopo.md#a8--o-handshake-não-manda-programas-instalados-nem-usuário-logado), a
 [A14](#a14--o-inventário-o-que-fica-estável-vai-o-que-oscila-ou-não-tem-formato-espera), a
 [A16](#a16--a-telemetria-a-média-desde-a-amostra-anterior-o-disco-como-o-df-a-rede-só-pela-placa-física) e a
 [A22](#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar).
@@ -546,7 +561,7 @@ programas, e uma amostra de minuto em minuto para a rede e os processos.
 
 ## A25 — O handshake leva a versão do agente, e vai de novo uma vez por dia
 
-> **Superada em parte por [A26](#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel):** o pedido de inventário na hora, que o painel agora faz.
+> **Superada em parte por [A26](#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel):** o "inventariar agora", descartado aqui, volta como o `REFRESH`, tratado pela conexão.
 
 **Decidido** (2026-11-16, junto com o SentinelWeb):
 
@@ -591,7 +606,8 @@ inventário só a cada conexão).
 - **A versão sobe para 0.2.0.** O SentinelWeb compara a `AgentVersion` e não manda o `REFRESH` ao agente anterior, que o
   recusaria no log.
 
-**Supera em parte:** [A23](./comandos.md#a23--a-lista-fica-nas-três-ações-e-o-terminal-não-entra) (pedir o inventário
+**Supera em parte:** [A5](./comandos.md#a5--comando-é-lista-fechada-sem-shell) (outra `Action` recusada: o
+`REFRESH` não é), [A23](./comandos.md#a23--a-lista-fica-nas-três-ações-e-o-terminal-não-entra) (pedir o inventário
 na hora, descartado ali) e [A25](#a25--o-handshake-leva-a-versão-do-agente-e-vai-de-novo-uma-vez-por-dia) (o
 "inventariar agora" descartado).
 

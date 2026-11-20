@@ -5,13 +5,16 @@
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A5, A18 e A23 (a A5 superada em parte pela A23).
+> Decisões neste arquivo: A5, A18 e A23 (a A5 superada em parte pela A23 e pela A26, e a A23 em parte pela A26).
 
 ---
 
 ## A5 — Comando é lista fechada, sem shell
 
 > **Superada em parte por [A23](#a23--a-lista-fica-nas-três-ações-e-o-terminal-não-entra):** os comandos de terminal saíram de avaliação e não entram.
+>
+> **Superada em parte por [A26](./protocolo.md#a26--o-refresh-manda-o-inventário-e-a-telemetria-na-hora-a-pedido-do-painel):** o `REFRESH` chega como `Action` e não é recusado; a conexão o trata
+> antes da lista.
 
 **Decidido** (2026-11-13):
 - O agente conhece as três ações que o servidor manda: `SHUTDOWN`, `REBOOT` e `SUSPEND`. Outra `Action` é

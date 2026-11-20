@@ -6,7 +6,7 @@
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
 > Decisões neste arquivo: A1–A3, A19, A21 e A27 (a A3 superada em parte pela A19, e a A2 em parte pela A21,
-> pela A22 e pela A27).
+> pela A22, pela A24 e pela A27).
 
 ---
 
@@ -40,6 +40,9 @@ comandos de energia.
 >
 > **Superada em parte por [A22](./protocolo.md#a22--os-programas-e-as-placas-de-vídeo-vão-no-handshake-como-no-glpi-antes-de-o-sentinelweb-guardar):**
 > a pasta `Telemetry/Gpu` sai; as placas de vídeo são lidas no `Inventory`.
+>
+> **Superada em parte por [A24](./protocolo.md#a24--o-agente-manda-só-o-que-o-sentinelweb-lê-os-programas-a-rede-e-os-processos-saem):**
+> as pastas `Telemetry/Network` e `Telemetry/Processes` saem.
 >
 > **Superada em parte por [A27](#a27--o-agente-para-windows-é-trabalho-futuro):** o Windows passa a trabalho
 > futuro declarado.
