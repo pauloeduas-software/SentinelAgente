@@ -75,7 +75,7 @@ internal sealed partial class PowerCommands(
     [LoggerMessage(LogLevel.Error, "O systemd recusou o comando {Action} ({CommandId}), código {ExitCode}: {Error}")]
     private partial void LogRejected(string action, string commandId, int exitCode, string error);
 
-    [LoggerMessage(LogLevel.Error, "O comando {Action} ({CommandId}) não respondeu em {Timeout} e foi interrompido.")]
+    [LoggerMessage(LogLevel.Error, "O systemctl do comando {Action} ({CommandId}) não voltou em {Timeout} e foi interrompido.")]
     private partial void LogTimedOut(string action, string commandId, TimeSpan timeout);
 
     [LoggerMessage(LogLevel.Error, "O comando {Action} ({CommandId}) não conseguiu rodar o systemctl.")]

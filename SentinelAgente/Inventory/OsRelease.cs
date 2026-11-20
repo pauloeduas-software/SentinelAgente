@@ -4,8 +4,8 @@ namespace SentinelAgente.Inventory;
 
 /// <summary>
 /// O sistema como <c>NAME VERSION_ID</c> do os-release ("Ubuntu 24.04"), e não
-/// o <c>PRETTY_NAME</c>: ele leva a versão pontual ("24.04.1 LTS"), e cada
-/// atualização viraria uma mudança de hardware no SentinelWeb (A14).
+/// o <c>PRETTY_NAME</c>: ele leva a versão pontual ("24.04.1 LTS"), que muda a
+/// cada atualização, e a ficha vai na forma que só muda quando a máquina muda (A14).
 /// </summary>
 internal static partial class OsRelease
 {
@@ -13,12 +13,12 @@ internal static partial class OsRelease
     {
         var fields = Parse(root.ReadText("etc/os-release") ?? root.ReadText("usr/lib/os-release"));
         // Sem NAME, o padrão do os-release é "Linux". Nunca nulo: o servidor
-        // gravaria "desconhecido" e contaria uma mudança.
+        // gravaria "desconhecido".
         var name = fields.GetValueOrDefault("NAME") ?? "Linux";
         var version = fields.GetValueOrDefault("VERSION_ID");
 
         // A distribuição contínua põe a data do snapshot na versão (o openSUSE
-        // Tumbleweed: "20241115"), e cada atualização seria uma mudança.
+        // Tumbleweed: "20241115"), que muda a cada atualização: aí vai só o NAME (A15).
         return version is null || SnapshotDate().IsMatch(version) ? name : $"{name} {version}";
     }
 

@@ -4,8 +4,8 @@ using SentinelAgente.Protocol;
 namespace SentinelAgente.Telemetry;
 
 /// <summary>
-/// A amostra de hora em hora (A12). A primeira vai quando a conexão sobe pela
-/// primeira vez, para a tela não passar uma hora vazia; dali em diante, uma por
+/// A amostra de hora em hora (A12). A primeira vai 10 s depois de a conexão subir
+/// pela primeira vez, para a tela não passar uma hora vazia; dali em diante, uma por
 /// hora, com ou sem conexão. O pedido do servidor (A26) manda uma na hora, sem
 /// mexer no relógio da hora.
 /// </summary>
@@ -115,6 +115,6 @@ internal sealed partial class TelemetryService(
     [LoggerMessage(LogLevel.Error, "A amostra de telemetria falhou; a próxima vai na hora seguinte.")]
     private partial void LogSampleFailed(Exception exception);
 
-    [LoggerMessage(LogLevel.Warning, "O coletor {Collector} falhou; a parte dele vai zerada nesta amostra.")]
+    [LoggerMessage(LogLevel.Warning, "O coletor {Collector} falhou; a parte dele fica zerada.")]
     private partial void LogCollectorFailed(Exception exception, string collector);
 }

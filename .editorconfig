@@ -8,6 +8,10 @@ indent_size = 2
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+# Os scripts do pacote usam tab: o <<-MSG do postinst só tira tab.
+[{packaging/build-deb.sh,packaging/deb/{postinst,prerm,postrm}}]
+indent_style = tab
+
 [*.cs]
 indent_size = 4
 

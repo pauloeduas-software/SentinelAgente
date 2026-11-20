@@ -1,6 +1,6 @@
 namespace SentinelAgente.Identity;
 
-/// <summary>O HWID não pôde ser lido ou gravado; a mensagem diz o que fazer.</summary>
+/// <summary>O arquivo do HWID não abre, não grava ou não tem um HWID válido; a mensagem diz o motivo.</summary>
 public sealed class HwidException(string message) : Exception(message);
 
 /// <summary>
@@ -8,7 +8,7 @@ public sealed class HwidException(string message) : Exception(message);
 /// arranque e guardado em disco, como o <c>agentid</c> do GLPI Agent
 /// (<c>_handlePersistentState</c>, em <c>lib/GLPI/Agent.pm</c>). Ele não vem do
 /// hardware: quem diz que a máquina reinstalada é a mesma é o SentinelWeb, pelo
-/// serial e pelo UUID do firmware que o handshake leva (a CV de lá).
+/// serial e pelo UUID do firmware que o handshake leva.
 /// </summary>
 /// <remarks>
 /// O arquivo some com o disco formatado e com o <c>apt purge</c>: a instalação
@@ -67,7 +67,7 @@ public static class Hwid
             {
                 Mode = FileMode.CreateNew,
                 Access = FileAccess.Write,
-                // Não é segredo: ele vai no fio e aparece no painel.
+                // Não é segredo: ele vai no fio, em toda mensagem.
                 UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite |
                                  UnixFileMode.GroupRead | UnixFileMode.OtherRead,
             }))

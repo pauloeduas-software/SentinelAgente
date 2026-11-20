@@ -4,10 +4,10 @@ namespace SentinelAgente.Inventory;
 
 /// <summary>
 /// O serial e o UUID que a fábrica deixou em branco, que o handshake manda
-/// nulos: o SentinelWeb reconhece a máquina por eles (a CV de lá), e um valor
+/// nulos: o SentinelWeb reconhece a máquina reinstalada por eles, e um valor
 /// de fábrica casaria máquinas diferentes. São as listas do SentinelWeb
-/// (<c>server/modules/reconciliation/helpers/normalize-identity.helper.ts</c>,
-/// as decisões D46 e CT de lá): mudou lá, muda aqui.
+/// (<c>server/modules/reconciliation/helpers/normalize-identity.helper.ts</c>):
+/// mudou lá, muda aqui.
 /// </summary>
 internal static partial class FactoryValues
 {

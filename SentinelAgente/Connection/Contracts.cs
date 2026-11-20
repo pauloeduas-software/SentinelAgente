@@ -7,13 +7,19 @@ namespace SentinelAgente.Connection;
 // manda dado (a telemetria) usa o IServerLink, que também avisa quando o servidor
 // pede os dados agora.
 
-/// <summary>Monta a apresentação da máquina, a cada conexão.</summary>
+/// <summary>
+/// Monta a apresentação da máquina a cada handshake (na conexão, no reenvio diário e
+/// no <c>REFRESH</c>), e também uma vez na subida e no cadastro, que pega dela o HWID.
+/// </summary>
 public interface IHandshakeSource
 {
     ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken);
 }
 
-/// <summary>Recebe os comandos que o servidor manda.</summary>
+/// <summary>
+/// Recebe todo <c>Command</c> que não é o <c>REFRESH</c>, que a conexão trata (A26):
+/// quem implementa recusa a <c>Action</c> fora da lista (A5).
+/// </summary>
 /// <remarks>
 /// Roda dentro da recepção: enquanto ele não volta, a resposta ao ping do
 /// WebSocket não é lida, e passados 15 s a conexão cai. Quem implementa dispara

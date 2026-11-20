@@ -2,7 +2,8 @@
 # Monta o .deb do agente em artifacts/ (A19):
 #   ./packaging/build-deb.sh          # amd64
 #   ./packaging/build-deb.sh arm64
-# Só precisa do SDK do .NET e do dpkg-deb; não pede root.
+# Precisa do SDK do .NET, do dpkg-deb e de um clone do git (a data do último
+# commit); não pede root.
 set -euo pipefail
 
 arch="${1:-amd64}"

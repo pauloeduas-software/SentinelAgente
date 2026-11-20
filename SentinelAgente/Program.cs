@@ -3,9 +3,9 @@ using SentinelAgente.Connection;
 using SentinelAgente.Inventory;
 using SentinelAgente.Telemetry;
 
-// O PROCESSO: liga o host e a integração com o systemd (pronto, parada e log no
-// journal). Cada pasta de função se registra aqui quando ganhar código; fora
-// isso, este arquivo não tem regra nenhuma.
+// O PROCESSO: liga o host, a configuração e a integração com o systemd (pronto,
+// parada e log no journal). A conexão e cada função se registram aqui (o
+// Identity entra pelo Inventory); fora isso, este arquivo não tem regra nenhuma.
 
 var builder = Host.CreateApplicationBuilder(args);
 

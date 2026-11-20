@@ -23,7 +23,9 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     private readonly List<AgentConnection> _started = [];
     private FakeAgentHub? _hub;
 
-    // Os tempos de verdade em milissegundos: o teste não espera 5 s por uma reconexão.
+    // A espera entre tentativas em milissegundos, para o teste não esperar 5 s por uma reconexão, e os
+    // prazos do upgrade e do fechamento mais curtos. O resto (o ping, o reenvio diário) fica com os tempos de
+    // verdade, e o teste que precisa encurta o dele.
     private static readonly ConnectionTimings Fast = new()
     {
         BackoffInitial = TimeSpan.FromMilliseconds(50),
@@ -190,11 +192,12 @@ public sealed class AgentConnectionTests : IAsyncLifetime
         var server = await ReadAsync(_hub.Accepted);
         await ReadAsync(_hub.Received);
 
-        // O SentinelWeb fecha com 1008 o handshake cujo HWID não é o do token.
+        // O SentinelWeb fecha com 1008 a conexão cuja mensagem traz outro HWID que não o do token; a primeira é o
+        // handshake.
         await server.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, "HWID diferente do token", TestContext.Current.CancellationToken);
 
         Assert.True(await EventuallyAsync(() => _log.Lines.Any(line =>
-            line.Contains("recusou o HWID abc123 (HWID diferente do token)") && line.Contains(EnrollSecretFile))));
+            line.Contains("fechou a conexão de abc123 com 1008 (HWID diferente do token)") && line.Contains(EnrollSecretFile))));
         Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("Nova tentativa em 00:00:00.2"))));
     }
 
@@ -206,7 +209,7 @@ public sealed class AgentConnectionTests : IAsyncLifetime
         var server = await ReadAsync(_hub.Accepted);
         await ReadAsync(_hub.Received);
 
-        // O Excluir de Agentes apaga a credencial e fecha a conexão com 1008 (DD de lá).
+        // O Excluir de Agentes apaga a credencial e fecha a conexão com 1008.
         await server.CloseOutputAsync(WebSocketCloseStatus.PolicyViolation, "Máquina excluída", TestContext.Current.CancellationToken);
 
         Assert.True(await EventuallyAsync(() => _log.Lines.Any(line => line.Contains("(Máquina excluída)"))));
@@ -307,7 +310,7 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Com_wss_confia_so_na_CA_configurada_no_cadastro_e_na_conexao()
+    public async Task Com_wss_a_CA_configurada_vale_no_cadastro_e_na_conexao()
     {
         using var certificates = new TestCertificates();
         using var serverCertificate = certificates.IssueServer();
@@ -413,7 +416,7 @@ public sealed class AgentConnectionTests : IAsyncLifetime
     private sealed class FailingHandshake : IHandshakeSource
     {
         public ValueTask<HandshakePayload> CreateAsync(CancellationToken cancellationToken) =>
-            throw new InvalidOperationException("Nenhum dado do firmware identifica esta máquina.");
+            throw new InvalidOperationException("Sem permissão para \"/var/lib/sentinel-agent/hwid\": o agente precisa rodar como root (sudo).");
     }
 
     private sealed class RecordingCommands : ICommandHandler

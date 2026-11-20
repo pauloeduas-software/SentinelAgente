@@ -11,8 +11,9 @@ internal static class AgentVersion
     public static string Current { get; } = Read(typeof(AgentVersion).Assembly);
 
     /// <summary>
-    /// A versão informativa sem o <c>+commit</c> que o SDK acrescenta: o servidor
-    /// compara versões, e o hash mudaria a cada build da mesma versão.
+    /// A versão informativa sem o <c>+commit</c> que o SDK acrescenta: a lista de
+    /// Agentes do SentinelWeb mostra a versão como chegou, e cada build da mesma
+    /// versão pareceria outra.
     /// </summary>
     internal static string Read(Assembly assembly)
     {

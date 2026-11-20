@@ -101,7 +101,7 @@ public sealed class PowerCommandsTests
 
         await Create(runner, TimeSpan.FromMilliseconds(50)).ExecuteAsync(new CommandPayload("REBOOT", "c-6"), "reboot");
 
-        Assert.Contains(_log.Lines, line => line.Contains("não respondeu") && line.Contains("c-6"));
+        Assert.Contains(_log.Lines, line => line.Contains("não voltou") && line.Contains("c-6"));
     }
 
     [Fact]
@@ -117,6 +117,8 @@ public sealed class PowerCommandsTests
 
 public sealed class ProcessRunnerTests
 {
+    private static readonly TimeSpan Wait = TimeSpan.FromSeconds(10);
+
     // O sh aqui é só o programa de teste: o agente chama o systemctl direto.
     [Fact]
     public async Task DevolveOCodigoEOStderr()
@@ -139,10 +141,50 @@ public sealed class ProcessRunnerTests
     [Fact]
     public async Task CanceladoMataOProcesso()
     {
-        using var cancel = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        var directory = Directory.CreateTempSubdirectory("sentinel-comando-");
+        try
+        {
+            // O shell grava o próprio PID e vira o sleep: o PID é o do processo que tem de morrer.
+            var pidFile = Path.Combine(directory.FullName, "pid");
+            using var cancel = new CancellationTokenSource();
+            var run = new ProcessRunner().RunAsync("/bin/sh", ["-c", "echo $$ > \"$0\"; exec sleep 30", pidFile], cancel.Token);
+            Assert.True(await EventuallyAsync(() => File.Exists(pidFile) && File.ReadAllText(pidFile).EndsWith('\n')));
+            var pid = File.ReadAllText(pidFile).Trim();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => new ProcessRunner().RunAsync("/bin/sleep", ["30"], cancel.Token));
+            cancel.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+            Assert.True(await EventuallyAsync(() => Dead(pid)));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    // Morto é o que sumiu do /proc ou virou zumbi à espera de quem o colha.
+    private static bool Dead(string pid)
+    {
+        try
+        {
+            var stat = File.ReadAllText($"/proc/{pid}/stat");
+            return stat[stat.LastIndexOf(')') + 2] == 'Z';
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+    }
+
+    private static async Task<bool> EventuallyAsync(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + Wait;
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline) return false;
+            await Task.Delay(20, TestContext.Current.CancellationToken);
+        }
+        return true;
     }
 
     [Fact]

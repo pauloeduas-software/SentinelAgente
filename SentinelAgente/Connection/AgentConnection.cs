@@ -75,8 +75,9 @@ public sealed partial class AgentConnection(
                 var outcome = await ConnectAndServeAsync(url, stoppingToken);
 
                 if (outcome == Outcome.Served) backoff.Reset();
-                // Token recusado não se conserta tentando de novo em segundos:
-                // espera o teto, e relê o arquivo na próxima.
+                // Recusa não se conserta tentando de novo em segundos (token com
+                // 401 ou 1008; sem token no disco, segredo com 401 ou cadastro com
+                // 409): espera o teto, e relê os arquivos na próxima.
                 var delay = outcome == Outcome.Unauthorized ? backoff.Max : backoff.Next();
                 LogRetrying(delay);
                 await Task.Delay(delay, stoppingToken);
@@ -98,8 +99,9 @@ public sealed partial class AgentConnection(
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        // O fechamento educado vai antes de cancelar a recepção: com ele o
-        // SentinelWeb põe a máquina OFFLINE na hora, e não depois de 2 minutos.
+        // O fechamento educado vai antes de cancelar a recepção: a conexão fecha
+        // com 1000 ("Agente encerrando"). O SentinelWeb põe a máquina OFFLINE na
+        // hora em que a conexão fecha, com qualquer código (A11).
         if (_session is { } session) await session.CloseAsync("Agente encerrando", timings.CloseTimeout);
         await base.StopAsync(cancellationToken);
     }
@@ -180,7 +182,7 @@ public sealed partial class AgentConnection(
             }
 
             // O servidor fecha com 1008 quando o token não vale mais para esta
-            // máquina: o HWID do handshake não é o do token (o arquivo do HWID foi
+            // máquina: o HWID da mensagem não é o do token (o arquivo do HWID foi
             // apagado ou trocado depois do cadastro, A20, ou o token veio de outra
             // instalação), ou a máquina foi excluída no SentinelWeb. O motivo vem
             // no fechamento, e vai para o log. Tentar de novo dá no mesmo, e só o
@@ -270,7 +272,8 @@ public sealed partial class AgentConnection(
     private ClientWebSocket CreateSocket(string token)
     {
         var socket = new ClientWebSocket();
-        // O token no header, nunca na URL: header o log do servidor oculta.
+        // O token no header, nunca na URL: a URL costuma ir para o log do
+        // servidor e do proxy, o header não.
         socket.Options.SetRequestHeader("Authorization", $"Bearer {token}");
         // Para separar o 401 (token errado) das outras falhas.
         socket.Options.CollectHttpResponseDetails = true;
@@ -329,7 +332,8 @@ public sealed partial class AgentConnection(
     /// <summary>
     /// O pedido de dados agora (A26): o handshake com o inventário relido, como o
     /// reenvio diário, e o aviso a quem manda dado (a telemetria), que manda a
-    /// amostra na hora. Não roda programa nenhum: só lê o que o handshake já lê.
+    /// amostra na hora. Não é comando de sistema: não muda nada na máquina, só
+    /// relê o que o handshake de toda conexão já lê.
     /// </summary>
     private async Task RefreshAsync(Session session, CommandPayload command, CancellationToken cancellationToken)
     {
@@ -354,8 +358,8 @@ public sealed partial class AgentConnection(
     {
         try
         {
-            // O sorteio é um por ping: sorteado de novo a cada espera, o silêncio
-            // passaria do máximo.
+            // O sorteio é um por ping: sorteado de novo a cada espera, o intervalo
+            // pesaria para o máximo.
             var interval = NextPingInterval();
             while (true)
             {
@@ -377,8 +381,8 @@ public sealed partial class AgentConnection(
     }
 
     /// <summary>
-    /// O handshake de novo, uma vez por dia, com o inventário relido (A25). Na
-    /// mesma conexão: o servidor só atualiza a máquina, e o vínculo dela fica.
+    /// O handshake de novo, uma vez por dia, com o inventário relido (A25), na
+    /// mesma conexão, sem reconectar.
     /// </summary>
     private async Task ResendHandshakeDailyAsync(Session session, CancellationToken cancellationToken)
     {
@@ -487,20 +491,20 @@ public sealed partial class AgentConnection(
     private partial void LogConnectFailed(Uri url, string reason);
 
     [LoggerMessage(LogLevel.Error,
-        "{Url} recusou o token desta máquina (401): ele foi revogado ou substituído. " +
+        "{Url} recusou o token desta máquina (401): a máquina foi excluída no SentinelWeb, o token foi trocado por um cadastro novo ou por outra instalação que herdou a máquina, ou ele não é deste servidor. " +
         "Para cadastrar de novo, ponha o segredo de instalação em {EnrollSecretFile}.")]
     private partial void LogUnauthorized(Uri url, string enrollSecretFile);
 
     [LoggerMessage(LogLevel.Error, "Sem token para conectar: {Reason}")]
     private partial void LogTokenUnreadable(string reason);
 
-    [LoggerMessage(LogLevel.Information, "Máquina {Hwid} cadastrada: token gravado em {TokenFile}, segredo de instalação apagado.")]
+    [LoggerMessage(LogLevel.Information, "Máquina {Hwid} cadastrada: token gravado em {TokenFile}.")]
     private partial void LogEnrolled(string hwid, string tokenFile);
 
     [LoggerMessage(LogLevel.Error, "O servidor recusou o segredo de instalação (401). Confira {EnrollSecretFile} contra o AGENT_ENROLL_SECRET do servidor.")]
     private partial void LogEnrollSecretRefused(string enrollSecretFile);
 
-    [LoggerMessage(LogLevel.Error, "O servidor recusou o cadastro (409): {Hwid} já está conectada com outro token.")]
+    [LoggerMessage(LogLevel.Error, "O servidor recusou o cadastro (409): a máquina {Hwid} está conectada, e o recadastro não toma o lugar dela.")]
     private partial void LogEnrollConflict(string hwid);
 
     [LoggerMessage(LogLevel.Warning, "Falha no cadastro: {Reason}.")]
@@ -522,7 +526,7 @@ public sealed partial class AgentConnection(
     private partial void LogFatal(Exception exception);
 
     [LoggerMessage(LogLevel.Error,
-        "O servidor recusou o HWID {Hwid} ({Reason}): o token não vale mais para esta máquina. " +
+        "O servidor fechou a conexão de {Hwid} com 1008 ({Reason}): o token não vale mais para esta máquina. " +
         "Ela foi excluída no SentinelWeb, o arquivo do HWID foi apagado ou trocado, ou o token veio de outra instalação; " +
         "para cadastrar de novo, ponha o segredo de instalação em {EnrollSecretFile}.")]
     private partial void LogRefused(string hwid, string reason, string enrollSecretFile);

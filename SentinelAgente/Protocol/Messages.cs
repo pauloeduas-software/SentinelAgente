@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace SentinelAgente.Protocol;
 
-/// <summary>Uma mensagem pronta para o fio: o tipo, para o log, e o JSON.</summary>
+/// <summary>Uma mensagem pronta para o fio: o tipo e o JSON.</summary>
 public sealed record OutgoingMessage(string Type, ReadOnlyMemory<byte> Json);
 
 /// <summary>Um comando do servidor: a ação e o UUID que a auditoria de lá grava.</summary>
@@ -16,9 +16,10 @@ public sealed record CommandPayload(string Action, string CommandId);
 public sealed record IncomingMessage(string Type, CommandPayload? Command);
 
 /// <summary>
-/// O envelope <c>{ "Type": …, "Payload": { "Hwid": …, … } }</c>, nos dois
-/// sentidos. Quem monta e lê o JSON é só esta classe: a conexão não conhece
-/// campo nenhum.
+/// O envelope <c>{ "Type": …, "Payload": { … } }</c>, nos dois sentidos: o que o
+/// agente manda leva o <c>Hwid</c> no <c>Payload</c>, e o <c>Command</c> do
+/// servidor, a <c>Action</c> e o <c>CommandId</c>. Quem monta e lê o JSON é só
+/// esta classe: a conexão não conhece o JSON.
 /// </summary>
 public static class Messages
 {
@@ -29,7 +30,8 @@ public static class Messages
 
     /// <summary>
     /// A ação que pede os dados agora (A26): a conexão a trata, e ela nunca chega ao
-    /// <c>ICommandHandler</c>, porque não roda nada na máquina.
+    /// <c>ICommandHandler</c>, porque não é comando de sistema: só faz o agente
+    /// mandar o handshake e a telemetria.
     /// </summary>
     public const string RefreshAction = "REFRESH";
 

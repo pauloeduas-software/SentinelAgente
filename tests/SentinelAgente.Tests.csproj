@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- /proc e /sys inventados no formato real: o teste não depende da máquina que o roda -->
+    <!-- /proc, /sys, /etc e o pci.ids no formato real, com valores inventados: o teste não depende da máquina que o roda -->
     <Content Include="testdata/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

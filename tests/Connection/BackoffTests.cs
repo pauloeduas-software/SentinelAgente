@@ -30,7 +30,7 @@ public sealed class BackoffTests
     }
 
     [Fact]
-    public void Volta_ao_comeco_depois_de_conectar()
+    public void Volta_ao_comeco_depois_da_conexao_que_ficou_de_pe()
     {
         var backoff = new Backoff(Initial, Max, new Random(42));
         for (var i = 0; i < 10; i++) backoff.Next();

@@ -42,7 +42,7 @@ internal static class PrimaryNetwork
         return new NetworkData(mac, LocalIp(addressesOf(route.Interface), route.Gateway)?.ToString());
     }
 
-    /// <summary>O IPv4 da placa na mesma rede do gateway; sem gateway, o primeiro.</summary>
+    /// <summary>O IPv4 da placa na mesma rede do gateway; senão, o primeiro.</summary>
     private static IPAddress? LocalIp(IReadOnlyList<InterfaceAddress> addresses, IPAddress gateway)
     {
         var ipv4 = addresses.Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork).ToList();

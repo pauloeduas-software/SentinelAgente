@@ -112,8 +112,9 @@ public sealed class MachineInventoryTests : IDisposable
     }
 
     [Fact]
-    public void O_sistema_vai_sem_a_versao_pontual()
+    public void O_sistema_vai_sem_versao_pontual_codinome_nem_edicao()
     {
+        Assert.Equal("Ubuntu 24.04", Read(Machine("notebook-dell")).OsVersion);
         Assert.Equal("Debian GNU/Linux 12", Read(Machine("pc-montado")).OsVersion);
         Assert.Equal("Fedora Linux 41", Read(Machine("thinkpad")).OsVersion);
     }

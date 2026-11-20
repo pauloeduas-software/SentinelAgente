@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <!-- O nome do binário instalado e do serviço do systemd -->
+    <!-- O nome do binário instalado, o mesmo do serviço e do ExecStart da unidade (packaging/sentinel-agent.service) -->
     <AssemblyName>sentinel-agent</AssemblyName>
     <RootNamespace>SentinelAgente</RootNamespace>
-    <!-- A versão do pacote .deb -->
+    <!-- A versão do pacote .deb e a AgentVersion do handshake (A25) -->
     <Version>0.2.0</Version>
   </PropertyGroup>
 

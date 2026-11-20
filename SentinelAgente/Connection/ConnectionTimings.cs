@@ -11,7 +11,10 @@ public sealed record ConnectionTimings
     /// <summary>A primeira espera depois de uma falha; dobra a cada falha seguida.</summary>
     public TimeSpan BackoffInitial { get; init; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>O teto da espera, e a espera depois de o servidor recusar o token.</summary>
+    /// <summary>
+    /// O teto da espera, e a espera depois de uma recusa: token com 401 ou 1008 e,
+    /// sem token no disco, segredo com 401 ou cadastro com 409.
+    /// </summary>
     public TimeSpan BackoffMax { get; init; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
@@ -20,7 +23,7 @@ public sealed record ConnectionTimings
     /// </summary>
     public TimeSpan StableAfter { get; init; } = TimeSpan.FromMinutes(1);
 
-    /// <summary>Quanto o upgrade para WebSocket pode demorar.</summary>
+    /// <summary>Quanto o upgrade para WebSocket pode demorar, e o cadastro (<c>POST /agent-hub/enroll</c>) também.</summary>
     public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
@@ -33,8 +36,9 @@ public sealed record ConnectionTimings
     /// <summary>
     /// Sem mandar nada por um tempo sorteado entre os dois, vai um <c>Ping</c>
     /// do protocolo, como o <c>checkin_hello</c> do Tactical RMM. O SentinelWeb
-    /// põe a máquina OFFLINE depois de 2 minutos sem mensagem (o máximo daqui
-    /// mais 60 s de folga), e o ping do WebSocket não conta para isso. O sorteio
+    /// põe a máquina OFFLINE quando passa de 2 minutos sem mensagem (o máximo
+    /// daqui mais 60 s de folga), numa conferência a cada minuto, e o ping do
+    /// WebSocket não conta para isso. O sorteio
     /// evita que a frota que reconectou junto pingue junto.
     /// </summary>
     public TimeSpan PingIntervalMin { get; init; } = TimeSpan.FromSeconds(30);
@@ -48,6 +52,6 @@ public sealed record ConnectionTimings
     /// </summary>
     public TimeSpan InventoryInterval { get; init; } = TimeSpan.FromDays(1);
 
-    /// <summary>Quanto o fechamento educado pode demorar quando o agente encerra.</summary>
+    /// <summary>Quanto o fechamento educado pode demorar: o do agente que encerra e a resposta ao do servidor.</summary>
     public TimeSpan CloseTimeout { get; init; } = TimeSpan.FromSeconds(5);
 }

@@ -1,7 +1,7 @@
 namespace SentinelAgente.Inventory;
 
 /// <summary>
-/// De onde saem o <c>/proc</c>, o <c>/sys</c> e o <c>/etc</c>: a raiz da
+/// De onde saem o <c>/proc</c>, o <c>/sys</c>, o <c>/etc</c> e o <c>/usr</c>: a raiz da
 /// máquina, ou uma pasta do testdata nos testes.
 /// </summary>
 internal sealed class SystemRoot(string path)

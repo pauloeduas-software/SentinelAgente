@@ -4,13 +4,16 @@ using SentinelAgente.Protocol;
 namespace SentinelAgente.Inventory;
 
 /// <summary>
-/// A ficha da máquina que o handshake leva (A14), relida a cada conexão: são
-/// poucos arquivos, e assim a peça trocada aparece na próxima.
+/// A ficha da máquina que o handshake leva (A14), relida a cada handshake: na
+/// conexão, no reenvio diário (A25) e no <c>REFRESH</c> (A26). São poucos
+/// arquivos, mais o <c>nvidia-smi</c> na máquina com NVIDIA, e assim a peça
+/// trocada aparece no mesmo dia.
 /// </summary>
 /// <remarks>
 /// O HWID é lido, ou sorteado, uma vez (A20), e é o mesmo para quem mais o
 /// manda (a telemetria). Se o arquivo dele não abre, a exceção sai antes da
-/// primeira conexão e para o serviço.
+/// primeira conexão e derruba o agente com código 1; o systemd tenta de novo a
+/// cada 30 s.
 /// </remarks>
 public sealed class MachineInventory : IHandshakeSource
 {
@@ -66,7 +69,7 @@ public sealed class MachineInventory : IHandshakeSource
 
     /// <summary>
     /// O nome curto, o mesmo do <c>gethostname</c>: o domínio fica de fora, como
-    /// no GLPI Agent e no OCS, e a reconciliação do SentinelWeb também o tira.
+    /// no GLPI Agent e no OCS.
     /// </summary>
     private string Hostname()
     {

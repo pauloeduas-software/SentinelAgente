@@ -2,8 +2,8 @@ namespace SentinelAgente.Inventory;
 
 /// <summary>
 /// O modelo do processador, o <c>model name</c> do <c>/proc/cpuinfo</c>. O ARM
-/// não tem esse campo, e aí vai nulo: uma tabela de peças por código de CPU é
-/// trabalho demais para máquina tão rara no parque (A14).
+/// não tem esse campo, e aí vai nulo: a tabela de peças por código de CPU, como
+/// a do gopsutil, ficou de fora (A14).
 /// </summary>
 internal static class CpuInfo
 {

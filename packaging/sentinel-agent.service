@@ -15,7 +15,7 @@ ExecStart=/usr/lib/sentinel-agent/sentinel-agent
 # para de vez; só a queda reinicia.
 Restart=on-failure
 RestartSec=30
-# Onde o token mora: o systemd cria /var/lib/sentinel-agent só para o root.
+# Onde o token e o HWID moram: o systemd cria /var/lib/sentinel-agent só para o root.
 StateDirectory=sentinel-agent
 StateDirectoryMode=0700
 

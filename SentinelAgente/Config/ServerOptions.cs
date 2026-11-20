@@ -4,8 +4,8 @@ namespace SentinelAgente.Config;
 
 /// <summary>
 /// Onde está o SentinelWeb e como provar quem é cada lado. Seção <c>Server</c>
-/// de <c>/etc/sentinel-agent/agent.json</c>, que a instalação escreve; nada
-/// disso mora no código (A11).
+/// de <c>/etc/sentinel-agent/agent.json</c>, que a instalação escreve; o endereço
+/// e os segredos não moram no código (A11), só o caminho padrão dos arquivos.
 /// </summary>
 public sealed class ServerOptions
 {
@@ -31,8 +31,8 @@ public sealed class ServerOptions
 }
 
 /// <summary>
-/// Confere a configuração na subida: endereço errado para o serviço com o motivo
-/// no journal, em vez de virar uma reconexão eterna.
+/// Confere a configuração na subida: a errada derruba o agente antes de
+/// conectar, com o motivo no journal, e o systemd tenta de novo a cada 30 s.
 /// </summary>
 public sealed class ServerOptionsValidator : IValidateOptions<ServerOptions>
 {

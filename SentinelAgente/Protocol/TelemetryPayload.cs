@@ -1,8 +1,9 @@
 namespace SentinelAgente.Protocol;
 
 /// <summary>
-/// A amostra de uso, de hora em hora (A12). Espelho do `TelemetryData` do
-/// SentinelWeb (`server/modules/shared/agent-protocol.types.ts`); o que cada
+/// A amostra de uso, de hora em hora (A12) e a cada <c>REFRESH</c> (A26). Os
+/// nomes são os que o <c>toTelemetryData</c> do SentinelWeb lê
+/// (<c>server/modules/agent/helpers/normalize-payload.helper.ts</c>); o que cada
 /// número quer dizer está na A16.
 /// </summary>
 /// <remarks>

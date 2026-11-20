@@ -3,7 +3,8 @@ using System.Text.RegularExpressions;
 namespace SentinelAgente.Tests.Repository;
 
 // A regra do docs/referencia/arquitetura.md, cobrada aqui e não na revisão: a base não conhece as funções,
-// e uma função usa outra sem ciclo. Quem quebra a regra lê na falha o arquivo e o que ele usou.
+// e uma função usa outra sem ciclo. Quem quebra a regra lê na falha o arquivo e a função que ele usou, ou o
+// ciclo.
 public sealed partial class ArchitectureTests
 {
     private static readonly string[] Base = ["Config", "Connection", "Protocol"];

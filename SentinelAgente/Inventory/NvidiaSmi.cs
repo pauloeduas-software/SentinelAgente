@@ -12,7 +12,7 @@ namespace SentinelAgente.Inventory;
 /// </summary>
 /// <remarks>
 /// O executável é fixo e roda sem shell. Sem ele (o <c>nouveau</c>, ou o driver
-/// fechado não instalado), a placa vai sem memória, como antes.
+/// fechado não instalado), a placa vai sem memória.
 /// </remarks>
 internal static class NvidiaSmi
 {

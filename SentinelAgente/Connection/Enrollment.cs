@@ -13,7 +13,7 @@ public enum EnrollOutcome
     /// <summary>401: o segredo de instalação não confere com o do servidor.</summary>
     SecretRefused,
 
-    /// <summary>409: esta máquina já está conectada com outro token.</summary>
+    /// <summary>409: a máquina está conectada, e o recadastro não toma o lugar dela.</summary>
     AlreadyConnected,
 
     /// <summary>Qualquer outra coisa: rede, certificado, resposta fora do protocolo.</summary>
@@ -24,8 +24,9 @@ public sealed record EnrollResult(EnrollOutcome Outcome, string? Token = null, s
 
 /// <summary>
 /// O cadastro: troca o segredo de instalação pelo token desta máquina, em
-/// <c>POST /agent-hub/enroll</c> (decisão CR do SentinelWeb). Mesmo servidor, mesmo
-/// certificado e mesma criptografia do WebSocket: <c>wss://</c> vira <c>https://</c>.
+/// <c>POST /agent-hub/enroll</c> do SentinelWeb. Mesmo servidor e mesmo
+/// certificado do WebSocket: <c>wss://</c> vira <c>https://</c>, e <c>ws://</c>
+/// (só em localhost), <c>http://</c>.
 /// </summary>
 public sealed class Enrollment(Uri hubUrl, ServerCertificate? certificate, TimeSpan timeout)
 {

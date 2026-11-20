@@ -1,6 +1,6 @@
 name: CI
 
-# O mesmo `dotnet build` e `dotnet test` do CLAUDE.md, mais a formatação e o
+# O mesmo `dotnet build` e `dotnet test` do CLAUDE.md, em Release, mais a formatação e o
 # .deb das duas arquiteturas (A19). Os testes leem o testdata: nada pede root.
 on:
   push:

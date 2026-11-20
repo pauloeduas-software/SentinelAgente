@@ -51,7 +51,7 @@ internal sealed partial class DiskUsage(SystemRoot root, IFileSystemStats stats)
 
     private static double Gb(long bytes) => Math.Round(bytes / GiB, 2);
 
-    /// <summary>O kernel escreve espaço, tab, quebra de linha e barra em octal (<c>\040</c>).</summary>
+    /// <summary>O kernel escreve espaço, tab, quebra de linha e barra invertida em octal (<c>\040</c>).</summary>
     private static string Unescape(string field) =>
         OctalEscape().Replace(field, match => ((char)Convert.ToInt32(match.Groups[1].Value, 8)).ToString());
 

@@ -3,10 +3,10 @@ namespace SentinelAgente.Telemetry.Disk;
 /// <summary>O tamanho de um sistema de arquivos e o que está livre, contando a reserva do root.</summary>
 internal readonly record struct FileSystemSpace(long TotalBytes, long FreeBytes);
 
-/// <summary>O <c>statvfs</c> de um ponto de montagem; nos testes, uma tabela.</summary>
+/// <summary>O <c>statvfs</c> de um ponto de montagem; nos testes, um falso.</summary>
 internal interface IFileSystemStats
 {
-    /// <summary>O espaço do ponto de montagem, ou <c>null</c> quando ele não responde.</summary>
+    /// <summary>O espaço do ponto de montagem, ou <c>null</c> quando a leitura falha.</summary>
     FileSystemSpace? Read(string mountPoint);
 }
 

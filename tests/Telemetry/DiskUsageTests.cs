@@ -7,16 +7,10 @@ public sealed class DiskUsageTests
 {
     private const long GiB = 1024L * 1024 * 1024;
 
-    // Todo ponto de montagem responde: 100 GiB com 25 livres.
+    // Todo ponto de montagem tem 100 GiB, com 25 livres.
     private sealed class AnySpace : IFileSystemStats
     {
-        public List<string> Asked { get; } = [];
-
-        public FileSystemSpace? Read(string mountPoint)
-        {
-            Asked.Add(mountPoint);
-            return new FileSystemSpace(100 * GiB, 25 * GiB);
-        }
+        public FileSystemSpace? Read(string mountPoint) => new(100 * GiB, 25 * GiB);
     }
 
     private static List<string> Names(string machine) =>
@@ -47,7 +41,7 @@ public sealed class DiskUsageTests
     }
 
     [Fact]
-    public void O_usado_conta_a_reserva_do_root_como_o_df()
+    public void O_usado_e_o_total_menos_o_livre()
     {
         var disk = new DiskUsage(Machines.Root("pc-montado"), new AnySpace()).Read().Single();
 
@@ -55,16 +49,16 @@ public sealed class DiskUsageTests
     }
 
     [Fact]
-    public void Ponto_que_nao_responde_fica_de_fora()
+    public void Ponto_que_nao_se_le_fica_de_fora()
     {
-        var disks = new DiskUsage(Machines.Root("thinkpad"), new NoAnswer("/boot/efi")).Read();
+        var disks = new DiskUsage(Machines.Root("thinkpad"), new Unreadable("/boot/efi")).Read();
 
         Assert.Equal(["/"], disks.Select(disk => disk.Name));
     }
 
-    private sealed class NoAnswer(string silent) : IFileSystemStats
+    private sealed class Unreadable(string failing) : IFileSystemStats
     {
         public FileSystemSpace? Read(string mountPoint) =>
-            mountPoint == silent ? null : new FileSystemSpace(GiB, 0);
+            mountPoint == failing ? null : new FileSystemSpace(GiB, 0);
     }
 }

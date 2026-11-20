@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- O agente é só Linux (A2): o analisador não cobra alternativa para o Windows -->
+    <!-- O agente é só Linux (A2, A27): o analisador não cobra alternativa para o Windows -->
     <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
       <_Parameter1>linux</_Parameter1>
     </AssemblyAttribute>
