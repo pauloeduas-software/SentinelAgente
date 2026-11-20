@@ -51,8 +51,8 @@ public sealed class MachineInventoryTests : IDisposable
             CpuModel = "Intel(R) Core(TM) i5-10210U CPU @ 1.60GHz",
             MacAddress = "a0:ce:c8:d1:e2:f3",
             LocalIp = "192.168.1.37",
-            BiosSerial = "B4C04F4B",
-            SystemUuid = "4c4c4544-0034-4310-8030-b4c04f4b5032",
+            BiosSerial = "ABC1234",
+            SystemUuid = "4c4c4544-0041-4210-8043-b1c04f323334",
             Manufacturer = "Dell Inc.",
             HardwareModel = "Latitude 5410",
         }, Read(Machine("notebook-dell")));
@@ -72,7 +72,7 @@ public sealed class MachineInventoryTests : IDisposable
         var payload = Read(Machine("pc-montado"));
 
         // O serial do produto é de fábrica, e o da placa toma o lugar, como no GLPI.
-        Assert.Equal("200164387600001", payload.BiosSerial);
+        Assert.Equal("200100000012345", payload.BiosSerial);
         Assert.Null(payload.SystemUuid);
         Assert.Null(payload.Manufacturer);
         Assert.Null(payload.HardwareModel);
@@ -81,7 +81,7 @@ public sealed class MachineInventoryTests : IDisposable
     [Fact]
     public void O_bond_de_menor_metrica_ganha_do_wifi()
     {
-        Write("sys/class/dmi/id/product_serial", "B4C04F4B");
+        Write("sys/class/dmi/id/product_serial", "ABC1234");
         Write("proc/net/route",
             "Iface\tDestination\tGateway \tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n" +
             "wlp2s0\t00000000\t0101A8C0\t0003\t0\t0\t600\t00000000\t0\t0\t0\n" +
@@ -91,7 +91,7 @@ public sealed class MachineInventoryTests : IDisposable
         Write("sys/class/net/bond0/address", "00:25:90:00:00:01");
         Write("sys/class/net/wlp2s0/type", "1");
         Write("sys/class/net/wlp2s0/device/uevent", "");
-        Write("sys/class/net/wlp2s0/address", "3c:a9:f4:5e:61:08");
+        Write("sys/class/net/wlp2s0/address", "3c:a9:f4:a1:b2:c3");
 
         Assert.Equal("00:25:90:00:00:01", Read(_directory).MacAddress);
     }
@@ -154,7 +154,7 @@ public sealed class MachineInventoryTests : IDisposable
     [Fact]
     public void O_modelo_lixo_da_supermicro_vai_nulo()
     {
-        Write("sys/class/dmi/id/product_serial", "B4C04F4B");
+        Write("sys/class/dmi/id/product_serial", "ABC1234");
         Write("sys/class/dmi/id/sys_vendor", "Supermicro");
         Write("sys/class/dmi/id/product_name", "Super Server");
 
@@ -166,7 +166,7 @@ public sealed class MachineInventoryTests : IDisposable
     [InlineData("VERSION_ID=1.0\nPRETTY_NAME=\"Distro 1.0.3\"\n", "Linux 1.0")]
     public void O_sistema_nao_muda_com_snapshot_nem_volta_ao_pretty_name(string osRelease, string expected)
     {
-        Write("sys/class/dmi/id/product_serial", "B4C04F4B");
+        Write("sys/class/dmi/id/product_serial", "ABC1234");
         Write("etc/os-release", osRelease);
 
         Assert.Equal(expected, Read(_directory).OsVersion);
@@ -196,7 +196,7 @@ public sealed class MachineInventoryTests : IDisposable
     [Fact]
     public void Sem_rede_nem_os_release_o_sistema_ainda_vai()
     {
-        Write("sys/class/dmi/id/product_serial", "B4C04F4B");
+        Write("sys/class/dmi/id/product_serial", "ABC1234");
         Write("proc/sys/kernel/hostname", "pc-01");
 
         var payload = Read(_directory);

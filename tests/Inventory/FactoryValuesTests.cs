@@ -34,7 +34,7 @@ public sealed class FactoryValuesTests
     [Fact]
     public void O_serial_da_placa_com_barras_da_dell_serve()
     {
-        Assert.True(FactoryValues.IsRealSerial("/B4C04F4B/CNCMK0004L0123/"));
+        Assert.True(FactoryValues.IsRealSerial("/ABC1234/CNCMK0000L0123/"));
     }
 
     [Theory]
