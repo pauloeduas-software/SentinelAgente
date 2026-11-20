@@ -14,7 +14,7 @@
 
 | Arquivo | Assunto | Decisões |
 |---|---|---|
-| [`plataforma.md`](./plataforma.md) | **Plataforma** — a linguagem, as pastas e a instalação | A1, A2, A3, A19, A21, A27 |
+| [`plataforma.md`](./plataforma.md) | **Plataforma** — a linguagem, as pastas, a instalação e a licença | A1, A2, A3, A19, A21, A27, A29 |
 | [`protocolo.md`](./protocolo.md) | **Protocolo** — o que o agente diz ao SentinelWeb | A4, A9, A10, A11, A12, A13, A14, A15, A16, A20, A22, A24, A25, A26, A28 |
 | [`comandos.md`](./comandos.md) | **Comandos** — o que o agente executa | A5, A18, A23 |
 | [`escopo.md`](./escopo.md) | **Escopo** — o que o agente antigo fazia e este não faz | A6, A7, A8, A17 |
@@ -42,6 +42,7 @@ da decisão que corrige:
 | **A5** (em parte: outra `Action` recusada), **A23** e **A25** (em parte: pedir o inventário na hora) | **A26** | o `REFRESH` do painel faz o agente mandar o handshake e uma amostra de telemetria na hora; a conexão o trata, e a lista dos comandos de sistema não muda |
 | **A2** (em parte: o Windows) | **A27** | o Windows deixa de ser só "fica de fora" e passa a trabalho futuro declarado; nada muda no código agora |
 | **A22** (em parte: a NVIDIA sem memória) | **A28** | a placa dedicada vai com a memória, a NVIDIA pelo `nvidia-smi`, e a integrada, AMD ou Intel, vai sem |
+| **A19** (em parte: a licença sem definição) | **A29** | o repositório e o pacote são `GPL-3.0-or-later`, com o texto no `LICENSE` e o `copyright` do `.deb` apontando para o do sistema |
 
 ## Os nomes
 

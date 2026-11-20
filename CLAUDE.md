@@ -70,7 +70,7 @@ Decidido; não proponha de novo:
 ## Docs e commits
 
 - Antes de escrever em `docs/`, leia o [`docs/README.md`](./docs/README.md): a pasta se decide pelo
-  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A29`).
+  ciclo de vida, não pelo assunto. Decisão nova continua a numeração (a próxima é a `A30`).
 - **Decisão do SentinelWeb não se cita aqui**, nem a daqui lá: o que o agente precisa saber do servidor vai
   no `protocolo.md`, como fato.
 - Commit direto na `main`. Só `feat:` ou `chore:`, sem escopo, corpo em bullets curtos. Um assunto,

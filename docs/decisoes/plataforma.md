@@ -1,12 +1,12 @@
 # Decisões da plataforma
 
-> A linguagem, as pastas e como o agente chega à máquina.
+> A linguagem, as pastas, como o agente chega à máquina e a licença.
 >
 > **A regra desta pasta:** decisão escrita aqui **não se reescreve**. Se a realidade mudou, a decisão é
 > **superada** por outra, com link entre as duas. As supersessões estão em [`README.md`](./README.md).
 >
-> Decisões neste arquivo: A1–A3, A19, A21 e A27 (a A3 superada em parte pela A19, e a A2 em parte pela A21,
-> pela A22, pela A24 e pela A27).
+> Decisões neste arquivo: A1–A3, A19, A21, A27 e A29 (a A3 superada em parte pela A19, a A2 em parte pela A21,
+> pela A22, pela A24 e pela A27, e a A19 em parte pela A29).
 
 ---
 
@@ -111,6 +111,9 @@ quando for preciso.
 ---
 
 ## A19 — O `.deb`: runtime do Ubuntu, endereço e segredo nas variáveis da instalação
+
+> **Superada em parte por [A29](#a29--a-licença-é-a-gpl-versão-3-ou-posterior):** a licença está definida; o
+> repositório e o pacote são `GPL-3.0-or-later`.
 
 **Decidido** (2026-11-15), completando a
 [A3](#a3--o-agente-é-um-serviço-do-systemd-instalado-por-pacote):
@@ -229,3 +232,23 @@ continua só Linux, o `.deb` continua o único pacote, e nenhuma pasta nem inter
 
 **O que fica de fora, declarado:** como o agente será no Windows (o serviço, o pacote, de onde vem cada campo) é
 decisão para quando o trabalho começar.
+
+---
+
+## A29 — A licença é a GPL, versão 3 ou posterior
+
+**Decidido** (2026-11-20), corrigindo em parte a
+[A19](#a19--o-deb-runtime-do-ubuntu-endereço-e-segredo-nas-variáveis-da-instalação): o agente é
+`GPL-3.0-or-later`. O texto da licença está no `LICENSE` da raiz. O `copyright` do `.deb` diz `GPL-3+` e aponta
+para o `/usr/share/common-licenses/GPL-3`, que o Ubuntu já traz, então o pacote não leva o `LICENSE`. As
+bibliotecas do NuGet e o executável do .NET que vão no pacote continuam com a licença delas, a MIT (`Expat`).
+
+**Por quê:**
+- **Quem distribui o agente oferece o código-fonte**, alterado ou não, com a mesma licença. O agente roda como
+  root e executa comandos; quem recebe uma versão alterada tem direito ao código dela e pode ver o que ela faz
+  ([A6](./escopo.md#a6--nada-escondido-camuflagem-proteção-do-binário-e-driver-de-kernel-saem)).
+- **"Ou posterior"** deixa valer a versão nova da GPL sem relicenciar, como no GLPI Agent (GPLv2+). É a forma que o
+  próprio texto da GPL sugere ("either version 3 of the License, or (at your option) any later version").
+
+**Descartado:** **uma licença permissiva**, como a MIT do Telegraf e a Apache-2.0 do Datadog. Ela deixa
+distribuir uma versão alterada sem o código-fonte.

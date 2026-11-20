@@ -36,3 +36,9 @@ O mapa da documentação está em [`docs/README.md`](./docs/README.md): o contra
 [`docs/referencia/protocolo.md`](./docs/referencia/protocolo.md), o ambiente em
 [`docs/guias/preparar-o-ambiente.md`](./docs/guias/preparar-o-ambiente.md) e a instalação em
 [`docs/guias/instalar-o-agente.md`](./docs/guias/instalar-o-agente.md).
+
+## 📄 Licença
+
+**[GNU GPL, versão 3 ou posterior](./LICENSE)** (`GPL-3.0-or-later`). Qualquer um pode usar, alterar e
+redistribuir. Quem distribuir o agente, alterado ou não, oferece o código-fonte junto, com a mesma licença
+(A29).
